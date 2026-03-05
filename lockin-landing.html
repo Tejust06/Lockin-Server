@@ -4352,11 +4352,139 @@
                 animation: none !important;
             }
         }
+
+        /* ── MORPHING PRELOADER ANIMATIONS ── */
+        @keyframes morphLock {
+            0% {
+                opacity: 0;
+                filter: blur(12px);
+                transform: scale(0.85);
+            }
+
+            10% {
+                opacity: 1;
+                filter: blur(0px);
+                transform: scale(1);
+            }
+
+            30% {
+                opacity: 1;
+                filter: blur(0px);
+                transform: scale(1);
+            }
+
+            40% {
+                opacity: 0;
+                filter: blur(12px);
+                transform: scale(1.15);
+            }
+
+            100% {
+                opacity: 0;
+                filter: blur(12px);
+                transform: scale(1.15);
+            }
+        }
+
+        @keyframes morphStopwatch {
+            0% {
+                opacity: 0;
+                filter: blur(12px);
+                transform: scale(0.85);
+            }
+
+            35% {
+                opacity: 0;
+                filter: blur(12px);
+                transform: scale(0.85);
+            }
+
+            45% {
+                opacity: 1;
+                filter: blur(0px);
+                transform: scale(1);
+            }
+
+            60% {
+                opacity: 1;
+                filter: blur(0px);
+                transform: scale(1);
+            }
+
+            70% {
+                opacity: 0;
+                filter: blur(12px);
+                transform: scale(1.15);
+            }
+
+            100% {
+                opacity: 0;
+                filter: blur(12px);
+                transform: scale(1.15);
+            }
+        }
+
+        @keyframes morphText {
+            0% {
+                opacity: 0;
+                filter: blur(12px);
+                transform: scale(0.85);
+            }
+
+            65% {
+                opacity: 0;
+                filter: blur(12px);
+                transform: scale(0.85);
+            }
+
+            75% {
+                opacity: 1;
+                filter: blur(0px);
+                transform: scale(1.05);
+            }
+
+            100% {
+                opacity: 1;
+                filter: blur(0px);
+                transform: scale(1.05);
+            }
+        }
     </style>
 </head>
 
 <body>
 
+    <!-- Morphing Preloader -->
+    <div id="morph-preloader"
+        style="position: fixed; inset: 0; background: #070709; z-index: 999999; display: flex; align-items: center; justify-content: center; pointer-events: none; transition: opacity 0.8s ease;">
+        <div
+            style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;">
+            <!-- 1. Lock Icon -->
+            <svg class="morph-icon morph-lock" xmlns="http://www.w3.org/2000/svg" width="42" height="42"
+                viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round"
+                style="position: absolute; opacity: 0; filter: blur(12px); transform: scale(0.85); animation: morphLock 2.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+
+            <!-- 2. Stopwatch Icon -->
+            <svg class="morph-icon morph-stopwatch" xmlns="http://www.w3.org/2000/svg" width="46" height="46"
+                viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round"
+                style="position: absolute; opacity: 0; filter: blur(12px); transform: scale(0.85); animation: morphStopwatch 2.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;">
+                <circle cx="12" cy="13" r="8"></circle>
+                <polyline points="12 9 12 13 14 15"></polyline>
+                <line x1="16.51" y1="7.49" x2="18" y2="6"></line>
+            </svg>
+
+            <!-- 3. LOCKIN Text -->
+            <div class="morph-icon morph-text"
+                style="position: absolute; color: white; font-weight: 800; font-size: 26px; letter-spacing: 0.2em; opacity: 0; filter: blur(12px); transform: scale(0.85); animation: morphText 2.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; margin-left: 0.2em;">
+                LOCKIN
+            </div>
+        </div>
+    </div>
     <!-- Skip to main content (a11y) -->
     <a href="#hero" class="sr-only"
         style="position:absolute;top:0;left:0;padding:8px 16px;background:#fff;color:#000;z-index:10000;clip:rect(0,0,0,0);width:1px;height:1px;"

@@ -44,6 +44,19 @@ let _GOOGLE_CLIENT_ID = '';
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    /* ── MORPHING PRELOADER LOGIC ───────────────────────────── */
+    const preloader = document.getElementById('morph-preloader');
+    if (preloader) {
+        // The CSS animation sequence takes exactly 2.8s. 
+        // We'll hold it for 2.8s, then fade out, then remove from DOM.
+        setTimeout(() => {
+            preloader.style.opacity = '0';
+            setTimeout(() => {
+                preloader.remove();
+            }, 800); // Wait for the transition: opacity 0.8s to finish
+        }, 2800);
+    }
+
     /* ── SCROLL & NAVIGATION MANAGEMENT ────────────────────────────── */
     const navbar = document.querySelector('.navbar');
 
