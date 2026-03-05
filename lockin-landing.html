@@ -4492,7 +4492,8 @@
                             style="font-size: 10.5px; color: #22c55e; font-weight: 600; display: flex; align-items: center; gap: 5px;">
                             <span
                                 style="display:inline-block; width:5px; height:5px; background:#22c55e; border-radius:50%; box-shadow:0 0 5px #22c55e;"></span>Session
-                            protected</div>
+                            protected
+                        </div>
                     </div>
 
                     <!-- Floating alert 2: Focus Active -->
@@ -6385,14 +6386,7 @@
 
     <!-- Arena Globe (cobe) + Sparkles -->
     <script type="module">
-        /* ── Load COBE ── */
-        let createGlobe;
-        try {
-            createGlobe = (await import('./cobe-bundle.js')).default;
-        } catch {
-            try { createGlobe = (await import('https://esm.sh/cobe@0.6.3')).default; }
-            catch (e) { console.error('COBE load failed:', e); }
-        }
+        import createGlobe from './cobe.esm.js';
 
         /* ── Globe ── */
         const globeEl = document.getElementById('arena-globe-canvas');
