@@ -1,0 +1,18 @@
+﻿ade23d6f2a6464123e4684276c1195ec6d5f77af Fix: Make arena floor gradient cover bottom padding completely to prevent hard line
+f27ea98c7a2387e4203a3d3e3060e76d2d1a2cd5 UI: Restore arena containment and implement dedicated floor gradient for perfect globe blending on all browsers
+e3532593100cccb7235a78361705c001b1d0592d Fix: Replace canvas mask with explicit CSS paint overlay for robust globe blending
+478aeb9472eb9f1823dbeadd1ec8dad7fb42308f UI: Finalized globe blending with high-z floating curtain and ultra-soft mask
+bd1ef63ecbae846327abda8d6ab4bd9f9be0fc4b UI: Finalized globe blending with radial ball mask and z-index curtains
+436170e6d963aff779fe556040169975590f5804 UI: Refine globe blending by removing overflow clipping and harsh gradients
+6f0917731ecfb2c3b9bdaa9b9b166c56c8573df4 UI: Improve globe blending with radial mask and refined positioning
+15e94f8bbce83f18cc4d1c7dc39c5f90c17434ab Feat: Implement 5 premium UI enhancements (Preloader, 3D Phone Glare, Magnetic CTAs, Live Counter, Glitch effects)
+c34c1260be93535956edccd359ff8cd2eb10acd9 Fix: Add phenomenon dependency to import map for globe
+ff837272dbd36c503686bf0d67b27b90bd9f08ab Style: Upgrade nav pill to glassmorphism
+3bd2bd99190d10cccc58881f58fe36b785343c12 Feat: Add sliding pill active state to navbar
+5661fd0e8b51af3feae882f5a7e35620470102c1 Fix: Limit hero min-height with clamp() to fix mobile desktop-site scaling
+298697ff0257c6a2d5dddf7b0e28d8ece2cb4eaf Fix: Mobile globe CSS visibility (top 50% instead of 80%)
+2b2dc31ec7b7279adbf8dc33d1b007becb98ab90 Fix: Replace top-level await with static ESM for COBE to unbreak mobile globe load
+4ad533e71a1187c3777639c3c246c2765fc711bd Remove utility bar (System Online / Beta Access / V1.0)
+65face18403f6f7a5fd2be29933e80c3cd736aef Fix: mobile navbar min-width + hide skip-to-content link
+596b0c0e5bfcc91e3c70dcb83375cdc130155580 Move frontend to lockin-server/public/ for Railway deployment
+790d12ae05d0f075e99e1c6c47082970793f0cfe Redeploy: include frontend files alongside server
