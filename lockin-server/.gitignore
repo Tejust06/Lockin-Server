@@ -1,0 +1,8 @@
+node_modules/
+.env
+waitlist.db
+waitlist.db-journal
+lockin.db
+lockin.db-shm
+lockin.db-wal
+npm-debug.log*

@@ -1,0 +1,19 @@
+# Dependencies
+lockin-server/node_modules/
+
+# Environment secrets
+lockin-server/.env
+
+# SQLite databases
+lockin-server/lockin.db
+lockin-server/lockin.db-shm
+lockin-server/lockin.db-wal
+lockin-server/waitlist.db
+lockin-server/waitlist.db-journal
+
+# Logs
+lockin-server/npm-debug.log*
+
+# Python cache
+__pycache__/
+*.py[cod]
