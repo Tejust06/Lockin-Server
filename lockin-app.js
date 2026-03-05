@@ -5,11 +5,11 @@
 
 /* ─── AUTH MODULE ─────────────────────────────────────────────────────────────────── */
 const Auth = {
-    getToken:  () => localStorage.getItem('lockin_token'),
-    getUser:   () => { try { const user = localStorage.getItem('lockin_user'); return user ? JSON.parse(user) : null; } catch (e) { return null; } },
-    save:      (token, user) => { localStorage.setItem('lockin_token', token); localStorage.setItem('lockin_user', JSON.stringify(user)); },
-    clear:     () => { localStorage.removeItem('lockin_token'); localStorage.removeItem('lockin_user'); },
-    isLoggedIn:() => !!localStorage.getItem('lockin_token'),
+    getToken: () => localStorage.getItem('lockin_token'),
+    getUser: () => { try { const user = localStorage.getItem('lockin_user'); return user ? JSON.parse(user) : null; } catch (e) { return null; } },
+    save: (token, user) => { localStorage.setItem('lockin_token', token); localStorage.setItem('lockin_user', JSON.stringify(user)); },
+    clear: () => { localStorage.removeItem('lockin_token'); localStorage.removeItem('lockin_user'); },
+    isLoggedIn: () => !!localStorage.getItem('lockin_token'),
 };
 
 async function authFetch(url, options = {}) {
@@ -77,6 +77,82 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    /* ── NAVBAR PILL LOGIC (Animated Indicator) ───────────────────── */
+    const navLinksContainer = document.querySelector('.nav-links');
+    const navPill = document.getElementById('nav-active-pill');
+    const sections = Array.from(document.querySelectorAll('section, main > div[id], header[id="hero"]')).filter(el => el.id);
+    const navAnchors = document.querySelectorAll('.nav-links a[href^="#"]');
+
+    if (navLinksContainer && navPill && navAnchors.length > 0) {
+
+        // Function to move the pill to a specific anchor target
+        function movePillTo(anchor) {
+            const containerRect = navLinksContainer.getBoundingClientRect();
+            const anchorRect = anchor.getBoundingClientRect();
+
+            navPill.style.width = `${anchorRect.width}px`;
+            // Calculate relative offset from the container's left edge
+            const offsetLeft = anchorRect.left - containerRect.left;
+            navPill.style.transform = `translateY(-50%) translateX(${offsetLeft}px)`;
+            navPill.style.opacity = '1';
+        }
+
+        let activeScrollAnchor = null;
+
+        // Intersection Observer to detect which section is in view
+        const observerOptions = {
+            root: null,
+            rootMargin: '-40% 0px -60% 0px', // Trigger when section passes middle of screen
+            threshold: 0
+        };
+
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const sectionId = entry.target.id;
+                    const matchingAnchor = Array.from(navAnchors).find(a => a.getAttribute('href') === `#${sectionId}`);
+                    // Fallback heuristics: If in hero, hide it or point to first element if applicable (we hide it at top)
+
+                    if (matchingAnchor) {
+                        activeScrollAnchor = matchingAnchor;
+                        movePillTo(matchingAnchor);
+                    } else if (window.scrollY < 100) {
+                        activeScrollAnchor = null;
+                        navPill.style.opacity = '0';
+                    }
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(sec => sectionObserver.observe(sec));
+
+        // Let mouse hover override the current scroll position preview
+        navAnchors.forEach(a => {
+            a.addEventListener('mouseenter', () => {
+                movePillTo(a);
+            });
+        });
+
+        // When mouse leaves nav, snap back to scroll position tracking
+        navLinksContainer.addEventListener('mouseleave', () => {
+            if (activeScrollAnchor && window.scrollY > 100) {
+                movePillTo(activeScrollAnchor);
+            } else {
+                navPill.style.opacity = '0';
+            }
+        });
+
+        // Init check on load
+        setTimeout(() => {
+            if (window.scrollY < 100) navPill.style.opacity = '0';
+        }, 300);
+
+        // Update on resize in case link widths change
+        window.addEventListener('resize', () => {
+            if (activeScrollAnchor && window.scrollY > 100) movePillTo(activeScrollAnchor);
+        });
+    }
 
     /* ── MOBILE NAV OVERLAY ────────────────────────────────────────── */
     const mobileBtn = document.querySelector('.mobile-menu-btn');
@@ -326,111 +402,111 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ctx) {
             console.warn('Canvas 2D context not available');
         } else {
-        let width, height;
-        let mouseX = -1000, mouseY = -1000;
-        let time = 0;
+            let width, height;
+            let mouseX = -1000, mouseY = -1000;
+            let time = 0;
 
-        // Resize function
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = document.querySelector('.hero').offsetHeight;
-        }
+            // Resize function
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = document.querySelector('.hero').offsetHeight;
+            }
 
-        window.addEventListener('resize', resize);
-        resize();
+            window.addEventListener('resize', resize);
+            resize();
 
-        // Track mouse position over canvas
-        window.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            // Adjust for scroll offset
-            mouseY = e.clientY + window.scrollY;
-        });
-
-        // Grid config
-        const gridSpacing = 48;
-        let isVisible = true;
-
-        // GPU Optimization: Pause Canvas rendering when Hero leaves viewport
-        const canvasObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const wasVisible = isVisible;
-                isVisible = entry.isIntersecting;
-
-                // If it just became visible again, instantly restart the loop
-                if (isVisible && !wasVisible) {
-                    animate();
-                }
+            // Track mouse position over canvas
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                // Adjust for scroll offset
+                mouseY = e.clientY + window.scrollY;
             });
-        }, { threshold: 0 });
 
-        const heroSection = document.querySelector('.hero');
-        if (heroSection) {
-            canvasObserver.observe(heroSection);
-        }
+            // Grid config
+            const gridSpacing = 48;
+            let isVisible = true;
 
-        function animate() {
-            // HALT RENDER CYCLE IF OFF-SCREEN
-            if (!isVisible) return;
+            // GPU Optimization: Pause Canvas rendering when Hero leaves viewport
+            const canvasObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const wasVisible = isVisible;
+                    isVisible = entry.isIntersecting;
 
-            ctx.clearRect(0, 0, width, height);
+                    // If it just became visible again, instantly restart the loop
+                    if (isVisible && !wasVisible) {
+                        animate();
+                    }
+                });
+            }, { threshold: 0 });
 
-            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-
-            // Setup Mask Gradient for cursor proximity
-            const glowRadius = 250;
-            const lineGradient = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, glowRadius);
-            lineGradient.addColorStop(0, isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.15)');
-            lineGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-            // 1. Draw Grid Base with constrained gradient stroke
-            ctx.beginPath();
-            ctx.strokeStyle = lineGradient;
-            ctx.lineWidth = 1;
-
-            // Draw vertical lines
-            for (let x = 0; x <= width; x += gridSpacing) {
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
+            const heroSection = document.querySelector('.hero');
+            if (heroSection) {
+                canvasObserver.observe(heroSection);
             }
 
-            // Draw horizontal lines
-            for (let y = 0; y <= height; y += gridSpacing) {
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
-            }
-            ctx.stroke();
+            function animate() {
+                // HALT RENDER CYCLE IF OFF-SCREEN
+                if (!isVisible) return;
 
-            // 3. Add Subtle Scrolling/Pulsing Lines overlay for "live" feel
-            if (!isLight) {
-                time += 0.005;
+                ctx.clearRect(0, 0, width, height);
+
+                const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+
+                // Setup Mask Gradient for cursor proximity
+                const glowRadius = 250;
+                const lineGradient = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, glowRadius);
+                lineGradient.addColorStop(0, isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.15)');
+                lineGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                // 1. Draw Grid Base with constrained gradient stroke
                 ctx.beginPath();
-                ctx.strokeStyle = 'rgba(139, 124, 255, 0.08)'; // Secondary accent
-                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = lineGradient;
+                ctx.lineWidth = 1;
 
-                // Animate some horizontal lines moving downward
-                for (let i = 0; i < 5; i++) {
-                    let movingY = ((time * 100) + (i * height / 5)) % height;
-                    ctx.moveTo(0, movingY);
-                    ctx.lineTo(width, movingY);
+                // Draw vertical lines
+                for (let x = 0; x <= width; x += gridSpacing) {
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                }
+
+                // Draw horizontal lines
+                for (let y = 0; y <= height; y += gridSpacing) {
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
                 }
                 ctx.stroke();
+
+                // 3. Add Subtle Scrolling/Pulsing Lines overlay for "live" feel
+                if (!isLight) {
+                    time += 0.005;
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(139, 124, 255, 0.08)'; // Secondary accent
+                    ctx.lineWidth = 1.5;
+
+                    // Animate some horizontal lines moving downward
+                    for (let i = 0; i < 5; i++) {
+                        let movingY = ((time * 100) + (i * height / 5)) % height;
+                        ctx.moveTo(0, movingY);
+                        ctx.lineTo(width, movingY);
+                    }
+                    ctx.stroke();
+                }
+
+                // Loop animation
+                requestAnimationFrame(animate);
             }
 
-            // Loop animation
-            requestAnimationFrame(animate);
-        }
-
-        // Start animation loop
-        animate();
+            // Start animation loop
+            animate();
         }
     }
 
     /* ── PAYMENT & AD FLOW ───────────────────────────────────────────── */
-    const checkoutModal   = document.getElementById('checkout-modal');
-    const adModal         = document.getElementById('ad-modal');
+    const checkoutModal = document.getElementById('checkout-modal');
+    const adModal = document.getElementById('ad-modal');
 
-    function openModal(el)  { if (!el) return; el.classList.add('active');    el.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
-    function closeModal(el) { if (!el) return; el.classList.remove('active'); el.setAttribute('aria-hidden','true');  document.body.style.overflow=''; }
+    function openModal(el) { if (!el) return; el.classList.add('active'); el.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; }
+    function closeModal(el) { if (!el) return; el.classList.remove('active'); el.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
 
     // ── Watch Ad button ──
     const btnWatchAd = document.getElementById('btn-watch-ad');
@@ -542,11 +618,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validateStake() {
         const inp = document.getElementById('stake-amount-input');
-        const ct  = document.getElementById('contract-input');
+        const ct = document.getElementById('contract-input');
         const err = document.getElementById('stake-error');
         const payBtn = document.getElementById('btn-submit-pay');
         const payText = document.getElementById('pay-text');
-        const amount  = parseInt(inp?.value, 10);
+        const amount = parseInt(inp?.value, 10);
         const contracted = ct?.value === 'I ACCEPT THE RISK';
 
         if (inp?.value && (isNaN(amount) || amount < 50)) {
@@ -558,27 +634,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const valid = amount >= 50 && contracted;
         if (payBtn && payText) {
             payBtn.style.background = valid ? 'var(--color-danger)' : '#ffffff';
-            payBtn.style.color      = valid ? '#fff' : '#000';
+            payBtn.style.color = valid ? '#fff' : '#000';
             if (payText) payText.textContent = valid ? `Stake ₹${amount} — Proceed` : 'Proceed to Payment';
         }
     }
 
     function resetPayBtn() {
-        const payBtn  = document.getElementById('btn-submit-pay');
+        const payBtn = document.getElementById('btn-submit-pay');
         const payText = document.getElementById('pay-text');
-        if (payBtn)  { payBtn.style.background = '#ffffff'; payBtn.style.color = '#000'; payBtn.style.pointerEvents='auto'; payBtn.style.opacity='1'; }
+        if (payBtn) { payBtn.style.background = '#ffffff'; payBtn.style.color = '#000'; payBtn.style.pointerEvents = 'auto'; payBtn.style.opacity = '1'; }
         if (payText) payText.textContent = 'Proceed to Payment';
     }
 
     // ── Stake pay submit ──
     document.getElementById('btn-submit-pay')?.addEventListener('click', async () => {
-        const inp  = document.getElementById('stake-amount-input');
-        const ct   = document.getElementById('contract-input');
-        const err  = document.getElementById('stake-error');
-        const payBtn  = document.getElementById('btn-submit-pay');
+        const inp = document.getElementById('stake-amount-input');
+        const ct = document.getElementById('contract-input');
+        const err = document.getElementById('stake-error');
+        const payBtn = document.getElementById('btn-submit-pay');
         const payText = document.getElementById('pay-text');
         const spinner = document.getElementById('pay-spinner');
-        const amount  = parseInt(inp?.value, 10);
+        const amount = parseInt(inp?.value, 10);
 
         if (!amount || amount < 50) {
             if (err) err.textContent = 'Minimum stake is ₹50.';
@@ -598,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (payText) payText.textContent = 'Processing…';
         if (spinner) spinner.style.display = '';
-        if (payBtn)  { payBtn.style.pointerEvents='none'; payBtn.style.opacity='0.75'; }
+        if (payBtn) { payBtn.style.pointerEvents = 'none'; payBtn.style.opacity = '0.75'; }
 
         try {
             const paid = await openRazorpay('stake', amount, () => {
@@ -609,7 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (paid) {
                 window.location.href = `/lockin-landing.html?payment=success&plan=stake&amount=${amount}`;
             } else {
-                resetPayBtn(); if (spinner) spinner.style.display='none';
+                resetPayBtn(); if (spinner) spinner.style.display = 'none';
             }
         } catch (err) {
             if (err && err instanceof Error) {
@@ -619,7 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (err) {
                 if (err) err.textContent = 'Payment failed.';
             }
-            resetPayBtn(); if (spinner) spinner.style.display='none';
+            resetPayBtn(); if (spinner) spinner.style.display = 'none';
         }
     });
 
@@ -627,10 +703,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let _adTimer = null;
     function startAdCountdown() {
         let secs = 30;
-        const countEl   = document.getElementById('ad-countdown');
-        const progressEl= document.getElementById('ad-progress-bar');
-        const continueBtn= document.getElementById('btn-ad-continue');
-        const btnText   = document.getElementById('ad-btn-text');
+        const countEl = document.getElementById('ad-countdown');
+        const progressEl = document.getElementById('ad-progress-bar');
+        const continueBtn = document.getElementById('btn-ad-continue');
+        const btnText = document.getElementById('ad-btn-text');
         if (!countEl) return;
 
         clearInterval(_adTimer);
@@ -656,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnText = document.getElementById('ad-btn-text');
         if (countEl) countEl.textContent = '30';
         if (progressEl) progressEl.style.width = '0%';
-        if (continueBtn) { continueBtn.disabled = true; continueBtn.style.cssText='background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.3);border:1px solid var(--glass-border);cursor:not-allowed'; }
+        if (continueBtn) { continueBtn.disabled = true; continueBtn.style.cssText = 'background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.3);border:1px solid var(--glass-border);cursor:not-allowed'; }
         if (btnText) btnText.textContent = 'Continue in 30s…';
     }
     document.getElementById('btn-ad-continue')?.addEventListener('click', () => {
@@ -676,11 +752,11 @@ document.addEventListener('DOMContentLoaded', () => {
             : '✗ Payment cancelled. No charge was made.';
         const banner = Object.assign(document.createElement('div'), { textContent: msg });
         Object.assign(banner.style, {
-            position:'fixed', bottom:'24px', left:'50%', transform:'translateX(-50%)',
+            position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
             background: status === 'success' ? '#16a34a' : '#dc2626',
-            color:'#fff', padding:'12px 24px', borderRadius:'10px',
-            fontWeight:'600', fontSize:'14px', zIndex:'9999',
-            boxShadow:'0 8px 24px rgba(0,0,0,0.4)', whiteSpace:'nowrap',
+            color: '#fff', padding: '12px 24px', borderRadius: '10px',
+            fontWeight: '600', fontSize: '14px', zIndex: '9999',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)', whiteSpace: 'nowrap',
         });
         document.body.appendChild(banner);
         setTimeout(() => banner.remove(), 6000);
@@ -716,15 +792,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Animate number changes
         function animateNumber(element, start, end, suffix = '', duration = 800) {
             const startTime = performance.now();
-            
+
             function update(currentTime) {
                 const elapsed = currentTime - startTime;
                 const progress = Math.min(elapsed / duration, 1);
-                
+
                 // Easing function for smooth animation
                 const easeOutQuad = progress * (2 - progress);
                 const current = start + (end - start) * easeOutQuad;
-                
+
                 if (suffix === 'h') {
                     element.innerHTML = current.toFixed(1) + '<span style="font-size: var(--text-base); color: var(--color-text-dim); font-weight: 500;">h</span>';
                 } else if (suffix === '%') {
@@ -732,12 +808,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     element.textContent = Math.round(current) + suffix;
                 }
-                
+
                 if (progress < 1) {
                     requestAnimationFrame(update);
                 }
             }
-            
+
             requestAnimationFrame(update);
         }
 
@@ -746,46 +822,46 @@ document.addEventListener('DOMContentLoaded', () => {
             // Generate realistic fluctuations
             const focusChange = (Math.random() - 0.5) * 3; // ±1.5 points
             const newFocusScore = Math.max(75, Math.min(100, currentFocusScore + focusChange));
-            
+
             const hoursChange = (Math.random() - 0.3) * 0.5; // Slightly upward bias
             const newWeeklyHours = Math.max(30, Math.min(40, currentWeeklyHours + hoursChange));
-            
+
             const todayChange = (Math.random() - 0.3) * 0.3;
             const newTodayHours = Math.max(3, Math.min(8, currentTodayHours + todayChange));
-            
+
             const sessionChange = Math.random() > 0.7 ? (Math.random() > 0.5 ? 1 : -1) : 0;
             const newActiveSessions = Math.max(1, Math.min(8, currentActiveSessions + sessionChange));
-            
+
             const disciplineChange = (Math.random() - 0.5) * 0.5;
             const newDiscipline = Math.max(95, Math.min(100, currentDiscipline + disciplineChange));
-            
+
             const productivityChange = (Math.random() - 0.5) * 2;
             const newProductivity = Math.max(2, Math.min(15, currentProductivity + productivityChange));
 
             // Animate updates
             animateNumber(focusScoreElement, currentFocusScore, newFocusScore, '', 600);
             updateFocusScoreCircle(newFocusScore);
-            
+
             animateNumber(weeklyHoursElement, currentWeeklyHours, newWeeklyHours, 'h', 800);
-            
+
             if (todayHoursElement) {
                 todayHoursElement.textContent = newTodayHours.toFixed(1) + 'h';
             }
-            
+
             if (activeSessionsElement) {
                 activeSessionsElement.textContent = newActiveSessions;
             }
-            
+
             if (disciplineRateElement) {
                 animateNumber(disciplineRateElement, currentDiscipline, newDiscipline, '%', 800);
             }
-            
+
             if (productivityElement) {
                 const arrow = newProductivity > currentProductivity ? '▲' : newProductivity < currentProductivity ? '▼' : '―';
                 productivityElement.innerHTML = `${arrow} ${newProductivity.toFixed(1)}%`;
                 productivityElement.style.color = newProductivity > 5 ? 'var(--color-success)' : 'var(--color-warning)';
             }
-            
+
             // Update weekly change badge
             if (weeklyChangeElement) {
                 const weeklyDelta = newWeeklyHours - 30; // baseline of 30h
@@ -848,10 +924,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Peak hours slight variations
             const morningChange = (Math.random() - 0.5) * 5;
             const newMorning = Math.max(60, Math.min(95, currentMorning + morningChange));
-            
+
             const afternoonChange = (Math.random() - 0.5) * 3;
             const newAfternoon = Math.max(85, Math.min(98, currentAfternoon + afternoonChange));
-            
+
             const eveningChange = (Math.random() - 0.5) * 8;
             const newEvening = Math.max(45, Math.min(75, currentEvening + eveningChange));
 
@@ -896,7 +972,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Momentum score
             const momentumChange = (Math.random() - 0.5) * 8;
             const newMomentum = Math.max(50, Math.min(95, currentMomentum + momentumChange));
-            
+
             if (momentumScore) {
                 momentumScore.textContent = Math.round(newMomentum);
             }
@@ -951,16 +1027,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function updateRankMovement(element, index) {
             const state = rankStates[index];
-            
+
             // Generate realistic rank changes
             const changeChance = Math.random();
-            
+
             // 40% chance of rank change
             if (changeChance < 0.4) {
                 // Determine if up or down (slightly weighted towards maintaining position)
                 const upOrDown = Math.random();
                 let newMovement;
-                
+
                 if (upOrDown < 0.35) {
                     // Move up (1-3 positions)
                     newMovement = Math.floor(Math.random() * 3) + 1;
@@ -974,20 +1050,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     newMovement = 0;
                     state.direction = 'neutral';
                 }
-                
+
                 state.movement = newMovement;
-                
+
                 // Update the element
                 const icon = element.querySelector('.rank-movement-icon');
                 const text = element.querySelector('span:last-child');
-                
+
                 // Add animation class
                 element.classList.add('animating');
                 setTimeout(() => element.classList.remove('animating'), 400);
-                
+
                 // Remove old classes
                 element.classList.remove('up', 'down', 'neutral');
-                
+
                 if (state.direction === 'up') {
                     element.classList.add('up');
                     icon.textContent = '↑';
@@ -1031,7 +1107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ── LIVE DATA ANIMATIONS FOR SHOWCASE CARDS ───────────────────── */
     // Make stats feel real-time with subtle updates
-    
+
     // Weekly Hours counter animation
     const weeklyHoursEl = document.getElementById('weekly-hours');
     if (weeklyHoursEl) {
@@ -1041,7 +1117,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const increase = Math.random() > 0.5 ? 0.1 : 0.2;
             currentHours += increase;
             weeklyHoursEl.textContent = `${currentHours.toFixed(1)} hours`;
-            
+
             // Add brief pulse animation
             weeklyHoursEl.style.transform = 'scale(1.05)';
             setTimeout(() => {
@@ -1060,7 +1136,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Math.random() > 0.6) {
                 currentRank = Math.max(1, currentRank - 1);
                 streakRankEl.textContent = `#${currentRank}`;
-                
+
                 // Pulse effect
                 streakRankEl.style.transform = 'scale(1.08)';
                 streakRankEl.style.color = '#fbbf24';
@@ -1081,7 +1157,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const change = Math.random() > 0.5 ? 1 : -1;
             currentScore = Math.max(88, Math.min(92, currentScore + change));
             focusScoreEl.textContent = currentScore;
-            
+
             // Subtle pulse
             focusScoreEl.style.transform = 'scale(1.03)';
             setTimeout(() => {
@@ -1099,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Math.random() > 0.4) {
                 currentFlow = Math.min(75, currentFlow + 1);
                 flowScoreEl.textContent = currentFlow;
-                
+
                 // Pulse
                 flowScoreEl.style.transform = 'scale(1.05)';
                 setTimeout(() => {
@@ -1117,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(() => {
             currentIndex = (currentIndex + 1) % amounts.length;
             stakeAmountEl.textContent = amounts[currentIndex];
-            
+
             // Subtle pulse with color intensity
             stakeAmountEl.style.transform = 'scale(1.04)';
             stakeAmountEl.style.textShadow = '0 0 16px rgba(239, 68, 68, 0.4)';
@@ -1136,7 +1212,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Increase by random amount (50-250)
             currentLocked += Math.floor(Math.random() * 200) + 50;
             totalLockedEl.textContent = `$${currentLocked.toLocaleString()}`;
-            
+
             // Flash effect
             totalLockedEl.style.opacity = '0.7';
             setTimeout(() => {
@@ -1153,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(() => {
             rateIndex = (rateIndex + 1) % rates.length;
             protectionRateEl.textContent = `${rates[rateIndex]}%`;
-            
+
             // Subtle pulse
             protectionRateEl.style.transform = 'scale(1.04)';
             setTimeout(() => {
@@ -1170,33 +1246,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ─── AUTH UI HANDLERS ───────────────────────────────────────────────────── */
-    const navSignInBtn      = document.getElementById('nav-signin-btn');
-    const authModal         = document.getElementById('auth-modal');
-    const authModalClose    = document.getElementById('auth-modal-close');
-    const authTabs          = document.querySelectorAll('.auth-tab');
-    const loginForm         = document.getElementById('login-form');
-    const registerForm      = document.getElementById('register-form');
-    const loginError        = document.getElementById('login-error');
-    const registerError     = document.getElementById('register-error');
-    const navUserPill       = document.getElementById('nav-user-pill');
-    const navUsernameDisp   = document.getElementById('nav-username-display');
-    const navAvatarLetter   = document.getElementById('nav-avatar-letter');
-    const navLogoutBtn      = document.getElementById('nav-logout-btn');
+    const navSignInBtn = document.getElementById('nav-signin-btn');
+    const authModal = document.getElementById('auth-modal');
+    const authModalClose = document.getElementById('auth-modal-close');
+    const authTabs = document.querySelectorAll('.auth-tab');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const loginError = document.getElementById('login-error');
+    const registerError = document.getElementById('register-error');
+    const navUserPill = document.getElementById('nav-user-pill');
+    const navUsernameDisp = document.getElementById('nav-username-display');
+    const navAvatarLetter = document.getElementById('nav-avatar-letter');
+    const navLogoutBtn = document.getElementById('nav-logout-btn');
 
-    const authHeading       = document.getElementById('auth-heading');
-    const authModalCloseX   = document.getElementById('auth-modal-close-x');
+    const authHeading = document.getElementById('auth-heading');
+    const authModalCloseX = document.getElementById('auth-modal-close-x');
 
     const AUTH_HEADINGS = {
-        login:    'Welcome back.',
+        login: 'Welcome back.',
         register: 'Create your account.',
     };
 
     function switchAuthTab(tab) {
         authTabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-        loginForm?.classList.toggle('active',    tab === 'login');
+        loginForm?.classList.toggle('active', tab === 'login');
         registerForm?.classList.toggle('active', tab === 'register');
         if (authHeading) authHeading.textContent = AUTH_HEADINGS[tab] || AUTH_HEADINGS.login;
-        if (loginError)    loginError.textContent    = '';
+        if (loginError) loginError.textContent = '';
         if (registerError) registerError.textContent = '';
     }
 
@@ -1212,7 +1288,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!authModal) return;
         authModal.classList.remove('active');
         document.body.style.overflow = '';
-        if (loginError)    loginError.textContent    = '';
+        if (loginError) loginError.textContent = '';
         if (registerError) registerError.textContent = '';
     }
 
@@ -1220,14 +1296,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = Auth.getUser();
         if (user && Auth.isLoggedIn()) {
             if (navSignInBtn) navSignInBtn.style.display = 'none';
-            if (navUserPill)  {
+            if (navUserPill) {
                 navUserPill.style.display = 'flex';
-                if (navUsernameDisp)  navUsernameDisp.textContent  = user.username;
-                if (navAvatarLetter) navAvatarLetter.textContent  = user.username.charAt(0).toUpperCase();
+                if (navUsernameDisp) navUsernameDisp.textContent = user.username;
+                if (navAvatarLetter) navAvatarLetter.textContent = user.username.charAt(0).toUpperCase();
             }
         } else {
             if (navSignInBtn) navSignInBtn.style.display = 'flex';
-            if (navUserPill)  navUserPill.style.display  = 'none';
+            if (navUserPill) navUserPill.style.display = 'none';
         }
     }
 
@@ -1246,7 +1322,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ── password visibility toggles ── */
     function wirePasswordToggle(toggleId, inputId) {
-        const btn   = document.getElementById(toggleId);
+        const btn = document.getElementById(toggleId);
         const input = document.getElementById(inputId);
         if (!btn || !input) return;
         btn.addEventListener('click', () => {
@@ -1255,7 +1331,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.style.color = isText ? '' : 'rgba(255,255,255,0.65)';
         });
     }
-    wirePasswordToggle('login-pw-toggle',    'login-password');
+    wirePasswordToggle('login-pw-toggle', 'login-password');
     wirePasswordToggle('register-pw-toggle', 'register-password');
 
     /* ── Google Sign-In ── */
@@ -1266,10 +1342,10 @@ document.addEventListener('DOMContentLoaded', () => {
             callback: handleGoogleCredential,
             auto_select: false,
         });
-        [['google-btn-login',    'google-custom-btn-login'],
-         ['google-btn-register', 'google-custom-btn-register']].forEach(([gisId, customId]) => {
+        [['google-btn-login', 'google-custom-btn-login'],
+        ['google-btn-register', 'google-custom-btn-register']].forEach(([gisId, customId]) => {
             const gisContainer = document.getElementById(gisId);
-            const customBtn    = document.getElementById(customId);
+            const customBtn = document.getElementById(customId);
             if (!gisContainer) return;
             gisContainer.innerHTML = '';
             google.accounts.id.renderButton(gisContainer, {
@@ -1287,7 +1363,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeErrEl = loginForm?.classList.contains('active')
             ? loginError : registerError;
         try {
-            const res  = await fetch('/api/auth/google', {
+            const res = await fetch('/api/auth/google', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ credential: response.credential }),
@@ -1309,17 +1385,19 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const loginVal = document.getElementById('login-input')?.value.trim();
-            const passVal  = document.getElementById('login-password')?.value;
-            const btn      = document.getElementById('login-submit-btn');
+            const passVal = document.getElementById('login-password')?.value;
+            const btn = document.getElementById('login-submit-btn');
             if (!loginVal || !passVal) return;
             const btnLabel = btn.querySelector('span:first-child');
             btn.disabled = true; if (btnLabel) btnLabel.textContent = 'Signing in…';
             if (loginError) loginError.className = 'auth-msg';
             if (loginError) loginError.textContent = '';
             try {
-                const res  = await fetch('/api/auth/login', { method: 'POST',
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login: loginVal, password: passVal }) });
+                    body: JSON.stringify({ login: loginVal, password: passVal })
+                });
                 const data = await res.json();
                 if (data.ok && data.token) {
                     Auth.save(data.token, data.user);
@@ -1340,18 +1418,20 @@ document.addEventListener('DOMContentLoaded', () => {
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('register-username')?.value.trim();
-            const email    = document.getElementById('register-email')?.value.trim();
+            const email = document.getElementById('register-email')?.value.trim();
             const password = document.getElementById('register-password')?.value;
-            const btn      = document.getElementById('register-submit-btn');
+            const btn = document.getElementById('register-submit-btn');
             if (!username || !email || !password) return;
             const btnLabel = btn.querySelector('span:first-child');
             btn.disabled = true; if (btnLabel) btnLabel.textContent = 'Creating account…';
             if (registerError) registerError.className = 'auth-msg';
             if (registerError) registerError.textContent = '';
             try {
-                const res  = await fetch('/api/auth/register', { method: 'POST',
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password }) });
+                    body: JSON.stringify({ username, email, password })
+                });
                 const data = await res.json();
                 if (data.ok && data.token) {
                     Auth.save(data.token, data.user);
@@ -1370,7 +1450,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (navLogoutBtn) {
         navLogoutBtn.addEventListener('click', async () => {
-            try { await authFetch('/api/auth/logout', { method: 'POST' }); } catch {}
+            try { await authFetch('/api/auth/logout', { method: 'POST' }); } catch { }
             Auth.clear();
             updateNavAuth();
         });
