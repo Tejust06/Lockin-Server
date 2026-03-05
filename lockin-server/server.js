@@ -128,7 +128,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: '1mb' }));
-app.use(express.static(path.join(__dirname, '..')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── AUTH MIDDLEWARE ──────────────────────────────────────────────────────────
 function authRequired(req, res, next) {
