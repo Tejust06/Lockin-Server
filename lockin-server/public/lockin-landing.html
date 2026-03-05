@@ -775,6 +775,16 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
+        /* Mobile: remove fixed min-width so navbar fits the screen */
+        @media (max-width: 767px) {
+            .navbar {
+                min-width: unset;
+                width: calc(100% - 32px);
+                padding: 0 20px;
+                justify-content: space-between;
+            }
+        }
+
         .navbar.scrolled {
             top: 12px;
             background: rgba(11, 11, 13, 0.8);
@@ -3975,7 +3985,7 @@
 <body>
 
     <!-- Skip to main content (a11y) -->
-    <a href="#hero" class="sr-only" style="position:absolute;top:0;left:0;padding:8px 16px;background:#fff;color:#000;z-index:10000;clip:auto;width:auto;height:auto;" onfocus="this.style.clip='auto';this.style.width='auto';this.style.height='auto';this.style.position='fixed'" onblur="this.style.clip='rect(0,0,0,0)';this.style.width='1px';this.style.height='1px';this.style.position='absolute'">Skip to content</a>
+    <a href="#hero" class="sr-only" style="position:absolute;top:0;left:0;padding:8px 16px;background:#fff;color:#000;z-index:10000;clip:rect(0,0,0,0);width:1px;height:1px;" onfocus="this.style.clip='auto';this.style.width='auto';this.style.height='auto';this.style.position='fixed'" onblur="this.style.clip='rect(0,0,0,0)';this.style.width='1px';this.style.height='1px';this.style.position='absolute'">Skip to content</a>
 
     <!-- Section 1: Navbar (Minimalist Pill) -->
     <header class="navbar" id="navbar">
