@@ -3,6 +3,6 @@
     "version": "1.0.0",
     "scripts": {
         "install": "cd lockin-server && npm install",
-        "start": "cd lockin-server && node server.js"
+        "start": "node lockin-server/server.js"
     }
 }
