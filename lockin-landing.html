@@ -13,6 +13,21 @@
     <meta name="theme-color" content="#070709">
     <link rel="canonical" href="https://lockin.app">
 
+    <!-- Core Performance Check (Executes instantly before DOM render) -->
+    <script>
+        (function () {
+            try {
+                // Detect Low CPU Cores (< 4), Low RAM (< 4GB), or Data-Saver connection
+                var isLowEnd = (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) ||
+                    (navigator.deviceMemory && navigator.deviceMemory < 4) ||
+                    (navigator.connection && (navigator.connection.saveData || navigator.connection.effectiveType === '2g'));
+                if (isLowEnd) {
+                    document.documentElement.classList.add('perf-low');
+                }
+            } catch (e) { }
+        })();
+    </script>
+
     <!-- Open Graph -->
     <meta property="og:title" content="LockIn — Focus with consequences.">
     <meta property="og:description" content="Commit to a focus session. Break focus and lose the stake.">
@@ -52,9 +67,12 @@
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23070709'/><text x='50' y='72' font-size='60' font-weight='900' fill='white' text-anchor='middle' font-family='system-ui'>L</text></svg>"
         type="image/svg+xml">
+    <!-- Non-blocking Font Load -->
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap"
-        rel="stylesheet">
+        rel="stylesheet" media="print" onload="this.media='all'">
 
     <!-- Premium Design System (CSS) -->
     <style>
@@ -4789,6 +4807,20 @@
                 width: 100% !important;
             }
         }
+
+        /* HARDWARE ACCELERATION FALLBACKS */
+        .perf-low * {
+            animation: none !important;
+            transition-duration: 0.01s !important;
+            scroll-behavior: auto !important;
+        }
+
+        .perf-low .glow,
+        .perf-low .vortex-glow,
+        .perf-low .popular-glow,
+        .perf-low .checkout-glow {
+            display: none !important;
+        }
     </style>
 </head>
 
@@ -6910,237 +6942,246 @@
 
     <!-- Arena Globe (cobe) + Sparkles -->
     <script type="module">
-        import createGlobe from './cobe.esm.js';
-
-        /* ── Globe ── */
-        const globeEl = document.getElementById('arena-globe-canvas');
-        if (globeEl && createGlobe) {
-            // Size from CSS (680×680 or responsive)
-            const rect = globeEl.getBoundingClientRect();
-            const isMobile = window.innerWidth < 768;
-            const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
-            let phi = 0;
-            const globe = createGlobe(globeEl, {
-                devicePixelRatio: dpr,
-                width: rect.width * dpr,
-                height: rect.height * dpr,
-                phi: 0,
-                theta: 0.3,
-                dark: 1,
-                diffuse: 1.2,
-                mapSamples: isMobile ? 12000 : 40000,
-                mapBrightness: 10,
-                baseColor: [0.25, 0.25, 0.25],
-                markerColor: [1, 0.85, 0.6],
-                glowColor: [0.03, 0.03, 0.04],
-                offset: [0, 0],
-                scale: 1,
-                markers: [],
-                onRender(state) {
-                    state.phi = phi;
-                    phi += 0.003;
-                },
-            });
-            // Resize handler
-            window.addEventListener('resize', () => {
-                const r = globeEl.getBoundingClientRect();
-                globe.width = r.width * dpr;
-                globe.height = r.height * dpr;
-            });
-        }
-
-        /* ── Sparkles ── */
-        {
-            const sc = document.getElementById('arena-sparkles');
-            if (sc) {
-                const ctx = sc.getContext('2d');
-                const isMobile = window.innerWidth < 768;
-                const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
-                const COUNT = isMobile ? 300 : 1200;
-                let W, H, particles;
-
-                function seed() {
-                    const parentRect = sc.parentElement.getBoundingClientRect();
-                    W = parentRect.width;
-                    H = parentRect.height;
-                    sc.width = W * dpr;
-                    sc.height = H * dpr;
-                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);   // reset + scale
-                    particles = Array.from({ length: COUNT }, () => ({
-                        x: Math.random() * W,
-                        y: Math.random() * H,
-                        r: Math.random() * 1.2 + 0.3,
-                        phase: Math.random(),
-                        speed: Math.random() * 0.004 + 0.001,
-                    }));
+        if (!document.documentElement.classList.contains('perf-low')) {
+            import('./cobe.esm.js').then((module) => {
+                const createGlobe = module.default;
+                /* ── Globe ── */
+                const globeEl = document.getElementById('arena-globe-canvas');
+                if (globeEl && createGlobe) {
+                    // Size from CSS (680×680 or responsive)
+                    const rect = globeEl.getBoundingClientRect();
+                    const isMobile = window.innerWidth < 768;
+                    const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
+                    let phi = 0;
+                    const globe = createGlobe(globeEl, {
+                        devicePixelRatio: dpr,
+                        width: rect.width * dpr,
+                        height: rect.height * dpr,
+                        phi: 0,
+                        theta: 0.3,
+                        dark: 1,
+                        diffuse: 1.2,
+                        mapSamples: isMobile ? 12000 : 40000,
+                        mapBrightness: 10,
+                        baseColor: [0.25, 0.25, 0.25],
+                        markerColor: [1, 0.85, 0.6],
+                        glowColor: [0.03, 0.03, 0.04],
+                        offset: [0, 0],
+                        scale: 1,
+                        markers: [],
+                        onRender(state) {
+                            state.phi = phi;
+                            phi += 0.003;
+                        },
+                    });
+                    // Resize handler
+                    window.addEventListener('resize', () => {
+                        const r = globeEl.getBoundingClientRect();
+                        globe.width = r.width * dpr;
+                        globe.height = r.height * dpr;
+                    });
                 }
-                seed();
-                window.addEventListener('resize', seed);
 
-                (function loop() {
-                    ctx.clearRect(0, 0, W, H);
-                    for (const p of particles) {
-                        p.phase += p.speed;
-                        if (p.phase > 1) p.phase -= 1;
-                        const a = Math.sin(p.phase * Math.PI) * 0.55;
-                        ctx.globalAlpha = a;
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, p.r, 0, 6.2832);
-                        ctx.fillStyle = '#fff';
-                        ctx.fill();
+                /* ── Sparkles ── */
+                {
+                    const sc = document.getElementById('arena-sparkles');
+                    if (sc) {
+                        const ctx = sc.getContext('2d');
+                        const isMobile = window.innerWidth < 768;
+                        const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
+                        const COUNT = isMobile ? 300 : 1200;
+                        let W, H, particles;
+
+                        function seed() {
+                            const parentRect = sc.parentElement.getBoundingClientRect();
+                            W = parentRect.width;
+                            H = parentRect.height;
+                            sc.width = W * dpr;
+                            sc.height = H * dpr;
+                            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);   // reset + scale
+                            particles = Array.from({ length: COUNT }, () => ({
+                                x: Math.random() * W,
+                                y: Math.random() * H,
+                                r: Math.random() * 1.2 + 0.3,
+                                phase: Math.random(),
+                                speed: Math.random() * 0.004 + 0.001,
+                            }));
+                        }
+                        seed();
+                        window.addEventListener('resize', seed);
+
+                        (function loop() {
+                            ctx.clearRect(0, 0, W, H);
+                            for (const p of particles) {
+                                p.phase += p.speed;
+                                if (p.phase > 1) p.phase -= 1;
+                                const a = Math.sin(p.phase * Math.PI) * 0.55;
+                                ctx.globalAlpha = a;
+                                ctx.beginPath();
+                                ctx.arc(p.x, p.y, p.r, 0, 6.2832);
+                                ctx.fillStyle = '#fff';
+                                ctx.fill();
+                            }
+                            ctx.globalAlpha = 1;
+                            requestAnimationFrame(loop);
+                        })();
                     }
-                    ctx.globalAlpha = 1;
-                    requestAnimationFrame(loop);
-                })();
+                }
             }
-        }
     </script>
 
     <!-- Three.js iPhone 3D scene -->
     <script type="module">
-        import * as THREE from 'three';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+        if (!document.documentElement.classList.contains('perf-low')) {
+                Promise.all([
+                    import('three'),
+                    import('three/addons/loaders/GLTFLoader.js'),
+                    import('three/addons/loaders/DRACOLoader.js')
+                ]).then(([THREE, GLTFModule, DRACOModule]) => {
+                    const GLTFLoader = GLTFModule.GLTFLoader;
+                    const DRACOLoader = DRACOModule.DRACOLoader;
 
-        const canvas = document.getElementById('phone-canvas');
-        if (!canvas) { console.warn('phone-canvas not found'); }
-        else {
+                    const canvas = document.getElementById('phone-canvas');
+                    if (!canvas) { console.warn('phone-canvas not found'); }
+                    else {
 
-            // ── Renderer ────────────────────────────────────────────────
-            const isMobile = window.innerWidth < 768;
-            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-            renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 0.85;
-            renderer.outputColorSpace = THREE.SRGBColorSpace;
+                        // ── Renderer ────────────────────────────────────────────────
+                        const isMobile = window.innerWidth < 768;
+                        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+                        renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+                        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                        renderer.toneMappingExposure = 0.85;
+                        renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-            // ── Scene ───────────────────────────────────────────────────
-            const scene = new THREE.Scene();
+                        // ── Scene ───────────────────────────────────────────────────
+                        const scene = new THREE.Scene();
 
-            // ── Camera ──────────────────────────────────────────────────
-            const camera = new THREE.PerspectiveCamera(25, 1, 0.1, 100);
-            camera.position.set(0.3, 0.1, 7);
+                        // ── Camera ──────────────────────────────────────────────────
+                        const camera = new THREE.PerspectiveCamera(25, 1, 0.1, 100);
+                        camera.position.set(0.3, 0.1, 7);
 
-            // ── Lights ──────────────────────────────────────────────────
-            // Cool ambient — dark scene
-            scene.add(new THREE.AmbientLight(0x080818, 1.5));
+                        // ── Lights ──────────────────────────────────────────────────
+                        // Cool ambient — dark scene
+                        scene.add(new THREE.AmbientLight(0x080818, 1.5));
 
-            // Key light — slightly cool white, upper front
-            const keyLight = new THREE.DirectionalLight(0xe8eeff, 2.5);
-            keyLight.position.set(3, 5, 5);
-            scene.add(keyLight);
+                        // Key light — slightly cool white, upper front
+                        const keyLight = new THREE.DirectionalLight(0xe8eeff, 2.5);
+                        keyLight.position.set(3, 5, 5);
+                        scene.add(keyLight);
 
-            // Rim light — blue/purple edge from behind
-            const rimLight = new THREE.DirectionalLight(0x5060dd, 2.8);
-            rimLight.position.set(-4, 2, -4);
-            scene.add(rimLight);
+                        // Rim light — blue/purple edge from behind
+                        const rimLight = new THREE.DirectionalLight(0x5060dd, 2.8);
+                        rimLight.position.set(-4, 2, -4);
+                        scene.add(rimLight);
 
-            if (!isMobile) {
-                // Fill light — subtle from bottom left
-                const fillLight = new THREE.DirectionalLight(0x2030aa, 0.6);
-                fillLight.position.set(-3, -3, 2);
-                scene.add(fillLight);
+                        if (!isMobile) {
+                            // Fill light — subtle from bottom left
+                            const fillLight = new THREE.DirectionalLight(0x2030aa, 0.6);
+                            fillLight.position.set(-3, -3, 2);
+                            scene.add(fillLight);
 
-                // Top highlight for screen reflection
-                const topLight = new THREE.DirectionalLight(0x6070ff, 1.2);
-                topLight.position.set(0, 6, 1);
-                scene.add(topLight);
-            }
-
-            // ── Resize handler ──────────────────────────────────────────
-            function resize() {
-                const w = canvas.clientWidth;
-                const h = canvas.clientHeight;
-                renderer.setSize(w, h, false);
-                camera.aspect = w / h;
-                camera.updateProjectionMatrix();
-            }
-            resize();
-            new ResizeObserver(resize).observe(canvas);
-
-            // ── Load GLB ────────────────────────────────────────────────
-            const dracoLoader = new DRACOLoader();
-            dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.163/examples/jsm/libs/draco/');
-
-            const loader = new GLTFLoader();
-            loader.setDRACOLoader(dracoLoader);
-
-            let phoneMesh = null;
-            const baseRotX = 0.12, baseRotY = -0.3;
-
-            loader.load(
-                './iphone_17_pro_max.glb',
-                (gltf) => {
-                    const model = gltf.scene;
-
-                    // Centre and normalise scale
-                    const box = new THREE.Box3().setFromObject(model);
-                    const centre = box.getCenter(new THREE.Vector3());
-                    const size = box.getSize(new THREE.Vector3());
-                    model.position.sub(centre);
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const desiredHeight = 2.4;
-                    model.scale.setScalar(desiredHeight / maxDim);
-
-                    // Position slightly right of centre
-                    model.position.set(0.35, -0.05, 0);
-
-                    // Tilt to show front face at an angle
-                    model.rotation.set(baseRotX, baseRotY, 0.04);
-
-                    // Override materials — force dark titanium / space-black look
-                    model.traverse((child) => {
-                        if (child.isMesh && child.material) {
-                            const mats = Array.isArray(child.material) ? child.material : [child.material];
-                            mats.forEach((mat) => {
-                                // Screen / emissive parts — keep them dark
-                                if (mat.emissive) {
-                                    mat.emissive.set(0x000000);
-                                }
-                                // Force dark blue-grey base colour
-                                if (mat.color) {
-                                    const lum = mat.color.r * 0.299 + mat.color.g * 0.587 + mat.color.b * 0.114;
-                                    // Very dark parts (black bezels, screen) — keep near black
-                                    if (lum < 0.15) {
-                                        mat.color.set(0x0a0a12);
-                                    } else {
-                                        // Body/frame — dark titanium
-                                        mat.color.set(0x1a1a2e);
-                                    }
-                                }
-                                mat.metalness = 0.85;
-                                mat.roughness = 0.25;
-                                mat.envMapIntensity = 1.5;
-                                mat.needsUpdate = true;
-                            });
+                            // Top highlight for screen reflection
+                            const topLight = new THREE.DirectionalLight(0x6070ff, 1.2);
+                            topLight.position.set(0, 6, 1);
+                            scene.add(topLight);
                         }
-                    });
 
-                    scene.add(model);
-                    phoneMesh = model;
-                },
-                undefined,
-                (err) => {
-                    console.warn('GLB load error:', err);
-                }
-            );
+                        // ── Resize handler ──────────────────────────────────────────
+                        function resize() {
+                            const w = canvas.clientWidth;
+                            const h = canvas.clientHeight;
+                            renderer.setSize(w, h, false);
+                            camera.aspect = w / h;
+                            camera.updateProjectionMatrix();
+                        }
+                        resize();
+                        new ResizeObserver(resize).observe(canvas);
 
-            // ── Animate ────────────────────────────────────────────────
-            let t = 0;
-            function animate() {
-                requestAnimationFrame(animate);
-                t += 0.01;
-                if (phoneMesh) {
-                    // Subtle float up/down
-                    phoneMesh.position.y = -0.05 + Math.sin(t) * 0.04;
-                    // Gentle sway matching base rotation
-                    phoneMesh.rotation.x = baseRotX + Math.sin(t * 0.7) * 0.012;
-                    phoneMesh.rotation.y = baseRotY + Math.sin(t * 0.5) * 0.015;
-                }
-                renderer.render(scene, camera);
+                        // ── Load GLB ────────────────────────────────────────────────
+                        const dracoLoader = new DRACOLoader();
+                        dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.163/examples/jsm/libs/draco/');
+
+                        const loader = new GLTFLoader();
+                        loader.setDRACOLoader(dracoLoader);
+
+                        let phoneMesh = null;
+                        const baseRotX = 0.12, baseRotY = -0.3;
+
+                        loader.load(
+                            './iphone_17_pro_max.glb',
+                            (gltf) => {
+                                const model = gltf.scene;
+
+                                // Centre and normalise scale
+                                const box = new THREE.Box3().setFromObject(model);
+                                const centre = box.getCenter(new THREE.Vector3());
+                                const size = box.getSize(new THREE.Vector3());
+                                model.position.sub(centre);
+                                const maxDim = Math.max(size.x, size.y, size.z);
+                                const desiredHeight = 2.4;
+                                model.scale.setScalar(desiredHeight / maxDim);
+
+                                // Position slightly right of centre
+                                model.position.set(0.35, -0.05, 0);
+
+                                // Tilt to show front face at an angle
+                                model.rotation.set(baseRotX, baseRotY, 0.04);
+
+                                // Override materials — force dark titanium / space-black look
+                                model.traverse((child) => {
+                                    if (child.isMesh && child.material) {
+                                        const mats = Array.isArray(child.material) ? child.material : [child.material];
+                                        mats.forEach((mat) => {
+                                            // Screen / emissive parts — keep them dark
+                                            if (mat.emissive) {
+                                                mat.emissive.set(0x000000);
+                                            }
+                                            // Force dark blue-grey base colour
+                                            if (mat.color) {
+                                                const lum = mat.color.r * 0.299 + mat.color.g * 0.587 + mat.color.b * 0.114;
+                                                // Very dark parts (black bezels, screen) — keep near black
+                                                if (lum < 0.15) {
+                                                    mat.color.set(0x0a0a12);
+                                                } else {
+                                                    // Body/frame — dark titanium
+                                                    mat.color.set(0x1a1a2e);
+                                                }
+                                            }
+                                            mat.metalness = 0.85;
+                                            mat.roughness = 0.25;
+                                            mat.envMapIntensity = 1.5;
+                                            mat.needsUpdate = true;
+                                        });
+                                    }
+                                });
+
+                                scene.add(model);
+                                phoneMesh = model;
+                            },
+                            undefined,
+                            (err) => {
+                                console.warn('GLB load error:', err);
+                            }
+                        );
+
+                        // ── Animate ────────────────────────────────────────────────
+                        let t = 0;
+                        function animate() {
+                            requestAnimationFrame(animate);
+                            t += 0.01;
+                            if (phoneMesh) {
+                                // Subtle float up/down
+                                phoneMesh.position.y = -0.05 + Math.sin(t) * 0.04;
+                                // Gentle sway matching base rotation
+                                phoneMesh.rotation.x = baseRotX + Math.sin(t * 0.7) * 0.012;
+                                phoneMesh.rotation.y = baseRotY + Math.sin(t * 0.5) * 0.015;
+                            }
+                            renderer.render(scene, camera);
+                        }
+                        animate();
+                    }
+                });
             }
-            animate();
-        }
     </script>
 </body>
 
