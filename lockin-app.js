@@ -214,23 +214,19 @@ document.addEventListener('DOMContentLoaded', () => {
             waitlistEmail.style.borderColor = 'rgba(255, 255, 255, 0.1)';
             waitlistEmail.style.boxShadow = 'none';
 
-            // Real API Call
-            fetch('/api/waitlist', {
+            // Submit to Netlify Forms
+            fetch('/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    'form-name': 'waitlist',
+                    'email': email
+                }).toString()
             })
                 .then(res => {
                     if (!res.ok) throw new Error('Network response was not ok');
-                    return res.json();
-                })
-                .then(data => {
                     waitlistBtn.innerHTML = 'Beta Secured';
-                    if (data.alreadyJoined) {
-                        waitlistMsg.textContent = "✓ You are already on the list! We'll notify you when LockIn launches.";
-                    } else {
-                        waitlistMsg.textContent = `✓ You're on the list. You are #${data.position} in line.`;
-                    }
+                    waitlistMsg.textContent = "✓ You're on the list! We'll notify you when LockIn launches.";
                     waitlistMsg.className = 'form-message success';
                     waitlistEmail.value = '';
 
@@ -250,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error(err);
                     waitlistBtn.disabled = false;
                     waitlistBtn.innerHTML = 'Join Beta';
-                    waitlistMsg.textContent = '❌ Connection failed. Is the server running?';
+                    waitlistMsg.textContent = '❌ Submission failed. Please try again.';
                     waitlistMsg.className = 'form-message error';
                 });
         });

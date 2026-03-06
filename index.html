@@ -6600,10 +6600,11 @@
                     </svg>
                 </div>
 
-                <form id="waitlist-form" class="vortex-input-bar">
+                <form id="waitlist-form" class="vortex-input-bar" data-netlify="true" name="waitlist">
+                    <input type="hidden" name="form-name" value="waitlist" />
                     <label for="waitlist-email" class="sr-only">Email address</label>
-                    <input id="waitlist-email" type="email" placeholder="Enter your email" autocomplete="email" required
-                        aria-label="Email address" />
+                    <input id="waitlist-email" name="email" type="email" placeholder="Enter your email"
+                        autocomplete="email" required aria-label="Email address" />
                     <button type="submit" class="btn-magnetic">Get Early Access</button>
                 </form>
 
