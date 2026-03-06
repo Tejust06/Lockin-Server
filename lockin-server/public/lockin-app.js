@@ -214,23 +214,19 @@ document.addEventListener('DOMContentLoaded', () => {
             waitlistEmail.style.borderColor = 'rgba(255, 255, 255, 0.1)';
             waitlistEmail.style.boxShadow = 'none';
 
-            // Real API Call
-            fetch('/api/waitlist', {
+            // Submit to Netlify Forms
+            fetch('/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    'form-name': 'waitlist',
+                    'email': email
+                }).toString()
             })
                 .then(res => {
                     if (!res.ok) throw new Error('Network response was not ok');
-                    return res.json();
-                })
-                .then(data => {
                     waitlistBtn.innerHTML = 'Beta Secured';
-                    if (data.alreadyJoined) {
-                        waitlistMsg.textContent = "✓ You are already on the list! We'll notify you when LockIn launches.";
-                    } else {
-                        waitlistMsg.textContent = `✓ You're on the list. You are #${data.position} in line.`;
-                    }
+                    waitlistMsg.textContent = "✓ You're on the list! We'll notify you when LockIn launches.";
                     waitlistMsg.className = 'form-message success';
                     waitlistEmail.value = '';
 
@@ -250,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error(err);
                     waitlistBtn.disabled = false;
                     waitlistBtn.innerHTML = 'Join Beta';
-                    waitlistMsg.textContent = '❌ Connection failed. Is the server running?';
+                    waitlistMsg.textContent = '❌ Submission failed. Please try again.';
                     waitlistMsg.className = 'form-message error';
                 });
         });
@@ -439,6 +435,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const gridSpacing = 48;
             let isVisible = true;
 
+            // GPU Optimization: Cache theme attribute instead of querying DOM at 60fps
+            let isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const themeObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'data-theme') {
+                        isLight = document.documentElement.getAttribute('data-theme') === 'light';
+                    }
+                });
+            });
+            themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
             // GPU Optimization: Pause Canvas rendering when Hero leaves viewport
             const canvasObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -462,8 +469,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!isVisible) return;
 
                 ctx.clearRect(0, 0, width, height);
-
-                const isLight = document.documentElement.getAttribute('data-theme') === 'light';
 
                 // Setup Mask Gradient for cursor proximity
                 const glowRadius = 250;
@@ -612,82 +617,76 @@ document.addEventListener('DOMContentLoaded', () => {
     adModal?.addEventListener('click', (e) => { if (e.target === adModal) { closeModal(adModal); clearAdCountdown(); } });
 
     // ── Stake amount chips ──
+    // ── Cache DOM nodes for keystroke performance ──
+    const stakeInp = document.getElementById('stake-amount-input');
+    const stakeCt = document.getElementById('contract-input');
+    const stakeErr = document.getElementById('stake-error');
+    const stakePayBtn = document.getElementById('btn-submit-pay');
+    const stakePayText = document.getElementById('pay-text');
+    const stakePaySpinner = document.getElementById('pay-spinner');
+
     document.querySelectorAll('.stake-chip').forEach(chip => {
         chip.addEventListener('click', () => {
-            const inp = document.getElementById('stake-amount-input');
-            if (inp) inp.value = chip.dataset.val;
+            if (stakeInp) stakeInp.value = chip.dataset.val;
             document.querySelectorAll('.stake-chip').forEach(c => c.classList.remove('active'));
             chip.classList.add('active');
             validateStake();
         });
     });
 
-    document.getElementById('stake-amount-input')?.addEventListener('input', () => {
+    stakeInp?.addEventListener('input', () => {
         document.querySelectorAll('.stake-chip').forEach(c => c.classList.remove('active'));
         validateStake();
     });
 
-    document.getElementById('contract-input')?.addEventListener('input', () => validateStake());
+    stakeCt?.addEventListener('input', () => validateStake());
 
     function validateStake() {
-        const inp = document.getElementById('stake-amount-input');
-        const ct = document.getElementById('contract-input');
-        const err = document.getElementById('stake-error');
-        const payBtn = document.getElementById('btn-submit-pay');
-        const payText = document.getElementById('pay-text');
-        const amount = parseInt(inp?.value, 10);
-        const contracted = ct?.value === 'I ACCEPT THE RISK';
+        const amount = parseInt(stakeInp?.value, 10);
+        const contracted = stakeCt?.value === 'I ACCEPT THE RISK';
 
-        if (inp?.value && (isNaN(amount) || amount < 50)) {
-            if (err) err.textContent = 'Minimum stake is ₹50.';
+        if (stakeInp?.value && (isNaN(amount) || amount < 50)) {
+            if (stakeErr) stakeErr.textContent = 'Minimum stake is ₹50.';
         } else {
-            if (err) err.textContent = '';
+            if (stakeErr) stakeErr.textContent = '';
         }
 
         const valid = amount >= 50 && contracted;
-        if (payBtn && payText) {
-            payBtn.style.background = valid ? 'var(--color-danger)' : '#ffffff';
-            payBtn.style.color = valid ? '#fff' : '#000';
-            if (payText) payText.textContent = valid ? `Stake ₹${amount} — Proceed` : 'Proceed to Payment';
+        if (stakePayBtn && stakePayText) {
+            stakePayBtn.style.background = valid ? 'var(--color-danger)' : '#ffffff';
+            stakePayBtn.style.color = valid ? '#fff' : '#000';
+            if (stakePayText) stakePayText.textContent = valid ? `Stake ₹${amount} — Proceed` : 'Proceed to Payment';
         }
     }
 
     function resetPayBtn() {
-        const payBtn = document.getElementById('btn-submit-pay');
-        const payText = document.getElementById('pay-text');
-        if (payBtn) { payBtn.style.background = '#ffffff'; payBtn.style.color = '#000'; payBtn.style.pointerEvents = 'auto'; payBtn.style.opacity = '1'; }
-        if (payText) payText.textContent = 'Proceed to Payment';
+        if (stakePayBtn) { stakePayBtn.style.background = '#ffffff'; stakePayBtn.style.color = '#000'; stakePayBtn.style.pointerEvents = 'auto'; stakePayBtn.style.opacity = '1'; }
+        if (stakePayText) stakePayText.textContent = 'Proceed to Payment';
     }
 
     // ── Stake pay submit ──
-    document.getElementById('btn-submit-pay')?.addEventListener('click', async () => {
-        const inp = document.getElementById('stake-amount-input');
-        const ct = document.getElementById('contract-input');
-        const err = document.getElementById('stake-error');
-        const payBtn = document.getElementById('btn-submit-pay');
-        const payText = document.getElementById('pay-text');
-        const spinner = document.getElementById('pay-spinner');
-        const amount = parseInt(inp?.value, 10);
+    stakePayBtn?.addEventListener('click', async () => {
+        const amount = parseInt(stakeInp?.value, 10);
 
         if (!amount || amount < 50) {
-            if (err) err.textContent = 'Minimum stake is ₹50.';
-            if (inp) inp.focus();
+            if (stakeErr) stakeErr.textContent = 'Minimum stake is ₹50.';
+            if (stakeInp) stakeInp.focus();
             return;
         }
-        if (ct?.value !== 'I ACCEPT THE RISK') {
-            if (ct) ct.focus();
-            if (payBtn) {
-                payBtn.classList.remove('vibrate');
-                void payBtn.offsetWidth;
-                payBtn.classList.add('vibrate');
-                setTimeout(() => payBtn.classList.remove('vibrate'), 400);
+        if (stakeCt?.value !== 'I ACCEPT THE RISK') {
+            if (stakeCt) stakeCt.focus();
+            if (stakePayBtn) {
+                stakePayBtn.classList.remove('vibrate');
+                void stakePayBtn.offsetWidth;
+                stakePayBtn.classList.add('vibrate');
+                setTimeout(() => stakePayBtn.classList.remove('vibrate'), 400);
             }
             return;
         }
 
-        if (payText) payText.textContent = 'Processing…';
-        if (spinner) spinner.style.display = '';
-        if (payBtn) { payBtn.style.pointerEvents = 'none'; payBtn.style.opacity = '0.75'; }
+        if (stakePayText) stakePayText.textContent = 'Processing…';
+        if (stakePaySpinner) stakePaySpinner.style.display = '';
+        if (stakePayBtn) { stakePayBtn.style.pointerEvents = 'none'; stakePayBtn.style.opacity = '0.75'; }
 
         try {
             const paid = await openRazorpay('stake', amount, () => {
@@ -698,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (paid) {
                 window.location.href = `/?payment=success&plan=stake&amount=${amount}`;
             } else {
-                resetPayBtn(); if (spinner) spinner.style.display = 'none';
+                resetPayBtn(); if (stakePaySpinner) stakePaySpinner.style.display = 'none';
             }
         } catch (err) {
             if (err && err instanceof Error) {
@@ -706,9 +705,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (err && typeof err === 'object' && 'message' in err) {
                 if (err) err.textContent = err.message;
             } else if (err) {
-                if (err) err.textContent = 'Payment failed.';
+                if (err && document.getElementById('stake-error')) document.getElementById('stake-error').textContent = 'Payment failed.'; // Fallback since err textContent is not valid on an Error string
             }
-            resetPayBtn(); if (spinner) spinner.style.display = 'none';
+            resetPayBtn(); if (stakePaySpinner) stakePaySpinner.style.display = 'none';
         }
     });
 
