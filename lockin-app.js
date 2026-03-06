@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
-                    'form-name': 'waitlist',
+                    'form-name': 'waitlist-form',
                     'email': email
                 }).toString()
             })
