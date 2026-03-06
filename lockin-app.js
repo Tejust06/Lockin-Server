@@ -699,7 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (checkoutModal) { checkoutModal.classList.remove('active'); checkoutModal.setAttribute('aria-hidden', 'true'); }
             });
             if (paid) {
-                window.location.href = `/lockin-landing.html?payment=success&plan=stake&amount=${amount}`;
+                window.location.href = `/?payment=success&plan=stake&amount=${amount}`;
             } else {
                 resetPayBtn(); if (stakePaySpinner) stakePaySpinner.style.display = 'none';
             }
