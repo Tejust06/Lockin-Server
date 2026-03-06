@@ -4768,6 +4768,27 @@
                 width: calc(100% - 24px) !important;
             }
         }
+
+        /* Fix CTA buttons and waitlist form on mobile */
+        @media (max-width: 768px) {
+
+            .btn-magnetic,
+            .btn-primary {
+                white-space: nowrap !important;
+                padding: 0 16px !important;
+                font-size: 14px !important;
+                height: 44px !important;
+            }
+
+            .vortex-input-bar {
+                flex-direction: column !important;
+                gap: 12px !important;
+            }
+
+            .vortex-input-bar button {
+                width: 100% !important;
+            }
+        }
     </style>
 </head>
 
@@ -6777,13 +6798,11 @@
                     style="font-size:12px;color:var(--color-danger);min-height:18px;margin-bottom:4px"></div>
 
                 <!-- Preset chips -->
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-                    <button type="button" class="stake-chip" data-val="100">₹100</button>
-                    <button type="button" class="stake-chip" data-val="250">₹250</button>
-                    <button type="button" class="stake-chip" data-val="500">₹500</button>
-                    <button type="button" class="stake-chip" data-val="1000">₹1000</button>
-                    <button type="button" class="stake-chip" data-val="2000">₹2000</button>
-                </div>
+                <button type="button" class="stake-chip" data-val="100" aria-label="Stake 100 Rupees">₹100</button>
+                <button type="button" class="stake-chip" data-val="250" aria-label="Stake 250 Rupees">₹250</button>
+                <button type="button" class="stake-chip" data-val="500" aria-label="Stake 500 Rupees">₹500</button>
+                <button type="button" class="stake-chip" data-val="1000" aria-label="Stake 1000 Rupees">₹1000</button>
+                <button type="button" class="stake-chip" data-val="2000" aria-label="Stake 2000 Rupees">₹2000</button>
 
                 <label style="color:var(--color-danger)">Commitment Contract</label>
                 <p style="font-size:12px;color:var(--color-text-dim);margin-bottom:8px">Type <strong>I ACCEPT THE
@@ -6875,6 +6894,9 @@
     <!-- App Logic -->
     <script src="lockin-app.js" defer></script>
 
+    <!-- Polyfill for older browsers (e.g. iOS 16.3 and older) supporting importmap -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+
     <!-- Three.js importmap — MUST appear before any <script type="module"> -->
     <script type="importmap">
     {
@@ -6895,7 +6917,8 @@
         if (globeEl && createGlobe) {
             // Size from CSS (680×680 or responsive)
             const rect = globeEl.getBoundingClientRect();
-            const dpr = Math.min(window.devicePixelRatio, 2);
+            const isMobile = window.innerWidth < 768;
+            const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
             let phi = 0;
             const globe = createGlobe(globeEl, {
                 devicePixelRatio: dpr,
@@ -6905,7 +6928,7 @@
                 theta: 0.3,
                 dark: 1,
                 diffuse: 1.2,
-                mapSamples: 40000,
+                mapSamples: isMobile ? 12000 : 40000,
                 mapBrightness: 10,
                 baseColor: [0.25, 0.25, 0.25],
                 markerColor: [1, 0.85, 0.6],
@@ -6931,8 +6954,9 @@
             const sc = document.getElementById('arena-sparkles');
             if (sc) {
                 const ctx = sc.getContext('2d');
-                const dpr = Math.min(window.devicePixelRatio, 2);
-                const COUNT = 1200;
+                const isMobile = window.innerWidth < 768;
+                const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
+                const COUNT = isMobile ? 300 : 1200;
                 let W, H, particles;
 
                 function seed() {
@@ -6983,8 +7007,9 @@
         else {
 
             // ── Renderer ────────────────────────────────────────────────
+            const isMobile = window.innerWidth < 768;
             const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 0.85;
             renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -7010,15 +7035,17 @@
             rimLight.position.set(-4, 2, -4);
             scene.add(rimLight);
 
-            // Fill light — subtle from bottom left
-            const fillLight = new THREE.DirectionalLight(0x2030aa, 0.6);
-            fillLight.position.set(-3, -3, 2);
-            scene.add(fillLight);
+            if (!isMobile) {
+                // Fill light — subtle from bottom left
+                const fillLight = new THREE.DirectionalLight(0x2030aa, 0.6);
+                fillLight.position.set(-3, -3, 2);
+                scene.add(fillLight);
 
-            // Top highlight for screen reflection
-            const topLight = new THREE.DirectionalLight(0x6070ff, 1.2);
-            topLight.position.set(0, 6, 1);
-            scene.add(topLight);
+                // Top highlight for screen reflection
+                const topLight = new THREE.DirectionalLight(0x6070ff, 1.2);
+                topLight.position.set(0, 6, 1);
+                scene.add(topLight);
+            }
 
             // ── Resize handler ──────────────────────────────────────────
             function resize() {
