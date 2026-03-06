@@ -3,14 +3,14 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
-const bcrypt  = require('bcrypt');
-const jwt     = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 
 const SALT_ROUNDS = 12;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
-const JWT_SECRET  = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is not set.');
   process.exit(1);
@@ -65,7 +65,7 @@ db.serialize(() => {
   )`);
 
   // Add google_id column to existing DBs (safe no-op if already exists)
-  db.run(`ALTER TABLE users ADD COLUMN google_id TEXT`, () => {});
+  db.run(`ALTER TABLE users ADD COLUMN google_id TEXT`, () => { });
 
   // Seed demo leaderboard users on first run
   db.get('SELECT COUNT(*) as count FROM users', (err, row) => {
@@ -76,13 +76,13 @@ db.serialize(() => {
          VALUES (?, ?, ?, ?, ?, ?)`
       );
       [
-        ['Alex_Dev',  'alex@demo.lockin',   142, 8750, 156],
-        ['SarahJ',    'sarah@demo.lockin',  118, 7230, 134],
-        ['Marcus_99', 'marcus@demo.lockin',  97, 6890, 127],
-        ['Tejas_U',   'tejas@demo.lockin',   84, 5740, 108],
-        ['Dev_P',     'devp@demo.lockin',    71, 5230,  97],
-        ['Rohan_V',   'rohan@demo.lockin',   63, 4810,  89],
-        ['Sara_T',    'sarat@demo.lockin',   54, 4120,  76],
+        ['Alex_Dev', 'alex@demo.lockin', 142, 8750, 156],
+        ['SarahJ', 'sarah@demo.lockin', 118, 7230, 134],
+        ['Marcus_99', 'marcus@demo.lockin', 97, 6890, 127],
+        ['Tejas_U', 'tejas@demo.lockin', 84, 5740, 108],
+        ['Dev_P', 'devp@demo.lockin', 71, 5230, 97],
+        ['Rohan_V', 'rohan@demo.lockin', 63, 4810, 89],
+        ['Sara_T', 'sarat@demo.lockin', 54, 4120, 76],
       ].forEach(([u, e, s, p, sc]) => stmt.run(u, e, demoHash, s, p, sc));
       stmt.finalize();
       console.log('  ▸ Demo users seeded');
@@ -99,7 +99,7 @@ const dbAll = (sql, p = []) =>
   new Promise((res, rej) => db.all(sql, p, (err, rows) => err ? rej(err) : res(rows)));
 
 // ─── EXPRESS SETUP ────────────────────────────────────────────────────────────
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 3001;
 const BASE_URL = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
 const allowedOrigins = (
@@ -192,9 +192,11 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
     res.json({
       ok: true, token,
-      user: { id: user.id, username: user.username, email: user.email,
-               streak: user.streak, points: user.points,
-               sessions_completed: user.sessions_completed, penalties: user.penalties }
+      user: {
+        id: user.id, username: user.username, email: user.email,
+        streak: user.streak, points: user.points,
+        sessions_completed: user.sessions_completed, penalties: user.penalties
+      }
     });
   } catch (err) {
     console.error(err);
@@ -221,7 +223,7 @@ app.get('/api/auth/me', authRequired, async (req, res) => {
 });
 
 app.post('/api/auth/logout', authRequired, async (req, res) => {
-  await dbRun('UPDATE users SET is_active = 0 WHERE id = ?', [req.user.id]).catch(() => {});
+  await dbRun('UPDATE users SET is_active = 0 WHERE id = ?', [req.user.id]).catch(() => { });
   res.json({ ok: true });
 });
 
@@ -254,9 +256,11 @@ app.post('/api/auth/google', async (req, res) => {
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
     res.json({
       ok: true, token,
-      user: { id: user.id, username: user.username, email: user.email,
-              streak: user.streak, points: user.points,
-              sessions_completed: user.sessions_completed, penalties: user.penalties },
+      user: {
+        id: user.id, username: user.username, email: user.email,
+        streak: user.streak, points: user.points,
+        sessions_completed: user.sessions_completed, penalties: user.penalties
+      },
     });
   } catch (err) {
     console.error('Google auth error:', err.message);
@@ -287,9 +291,9 @@ app.get('/api/stats', async (req, res) => {
     ]);
     res.json({
       totalSessions: (sessRow?.count || 0) + 4200,
-      totalStudents:  (userRow?.count || 0) + 1800,
+      totalStudents: (userRow?.count || 0) + 1800,
       completionRate: 92,
-      activeLive:     (activeRow?.count || 0) + 124,
+      activeLive: (activeRow?.count || 0) + 124,
     });
   } catch (err) {
     console.error(err);
@@ -512,13 +516,13 @@ const simInterval = setInterval(async () => {
       await dbRun('UPDATE users SET points=points+? WHERE id=?', [
         Math.floor(Math.random() * 40 + 10), rows[0].id,
       ]);
-  } catch {}
+  } catch { }
 }, 10000);
 
 // ─── SERVER ──────────────────────────────────────────────────────────────────
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n  ▸ LockIn server  →  http://localhost:${PORT}`);
-  console.log(`  ▸ Landing page   →  http://localhost:${PORT}/lockin-landing.html\n`);
+  console.log(`  ▸ Landing page   →  http://localhost:${PORT}/index.html\n`);
 });
 
 function shutdown(signal) {
@@ -527,7 +531,7 @@ function shutdown(signal) {
   server.close(() => db.close(() => { console.log('  ▸ Done'); process.exit(0); }));
 }
 
-process.on('SIGINT',  () => shutdown('SIGINT'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('unhandledRejection', (error) => { console.error('Unhandled rejection:', error); });
-process.on('uncaughtException',  (error) => { console.error('Uncaught exception:', error); });
+process.on('uncaughtException', (error) => { console.error('Uncaught exception:', error); });
