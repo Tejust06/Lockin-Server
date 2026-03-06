@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -1359,8 +1359,8 @@
             min-height: clamp(750px, 100vh, 1000px);
             display: flex;
             align-items: center;
-            padding-top: calc(var(--nav-height) + var(--space-6));
-            padding-bottom: var(--space-9);
+            padding-top: 140px;
+            padding-bottom: 200px;
             overflow: hidden;
         }
 
@@ -4449,12 +4449,330 @@
                 transform: scale(1.05);
             }
         }
+
+        /* ═══════════════════════════════════════════════════════════
+           MOBILE RESPONSIVENESS — v2 deep fix
+           ═══════════════════════════════════════════════════════════ */
+
+        /* ── All phones (≤ 767px) ── */
+        @media (max-width: 767px) {
+
+            /* Navbar: slimmer on mobile */
+            .navbar {
+                height: 48px !important;
+                top: 12px !important;
+                padding: 0 16px !important;
+            }
+
+            /* Scroll anchor offset so sticky nav doesn't cover headings */
+            section,
+            [id] {
+                scroll-margin-top: 80px;
+            }
+
+            /* Hide utility bar on mobile — too cluttered */
+            .utility-bar {
+                display: none !important;
+            }
+
+            /* Sections: halve vertical padding */
+            .section,
+            .py-section {
+                padding-top: 48px !important;
+                padding-bottom: 48px !important;
+            }
+
+            /* Section headers: less bottom margin */
+            .section-header {
+                margin-bottom: 32px !important;
+            }
+
+            /* Container: tighter horizontal padding */
+            .container {
+                padding: 0 16px !important;
+            }
+
+            /* Hero: compact */
+            .hero,
+            section#hero {
+                padding-top: 100px !important;
+                padding-bottom: 40px !important;
+                min-height: unset !important;
+            }
+
+            /* Hero grid → single column centred */
+            .container.grid.grid-cols-2 {
+                grid-template-columns: 1fr !important;
+                gap: 0 !important;
+                text-align: center !important;
+            }
+
+            .hero-content {
+                text-align: center !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+            }
+
+            /* Hero paragraph */
+            .hero-content>p,
+            .hero-content p[style] {
+                font-size: 15px !important;
+                max-width: 100% !important;
+                margin-bottom: 20px !important;
+            }
+
+            /* Hero CTA row: stack vertically */
+            .hero-content>div[style*="margin-top: 40px"] {
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 12px !important;
+                margin-top: 24px !important;
+                width: 100% !important;
+            }
+
+            .hero-content .btn-primary {
+                width: 100% !important;
+                max-width: 320px !important;
+                height: 48px !important;
+                font-size: 15px !important;
+                padding: 0 24px !important;
+                justify-content: center !important;
+            }
+
+            /* "See How It Works" link — hide on mobile to save space */
+            .hero-content>div[style*="margin-top: 40px"]>a:last-child {
+                display: none !important;
+            }
+
+            /* Phone mockup: fix height and scale the phone itself */
+            .hero-visual {
+                height: 380px !important;
+                margin-top: 16px !important;
+                overflow: hidden !important;
+            }
+
+            /* Scale the phone down — it's position:absolute so scaling is safe */
+            .phone-container.phone-single {
+                transform: scale(0.6) !important;
+                transform-origin: top center !important;
+            }
+
+            /* Floating alerts — hide ALL of them on mobile */
+            .hero-visual>div[style*="animation: float"] {
+                display: none !important;
+            }
+
+            /* ── Typography: aggressive scale-down ── */
+            h1,
+            h1[style] {
+                font-size: clamp(1.75rem, 8.5vw, 2.5rem) !important;
+                letter-spacing: -0.03em !important;
+                line-height: 1.15 !important;
+            }
+
+            h2,
+            h2[style] {
+                font-size: clamp(1.5rem, 7vw, 2.1rem) !important;
+                letter-spacing: -0.02em !important;
+            }
+
+            h3,
+            h3[style] {
+                font-size: clamp(1rem, 4.5vw, 1.35rem) !important;
+            }
+
+            /* Reduce section-header p font */
+            .section-header p {
+                font-size: 14px !important;
+                line-height: 1.6 !important;
+            }
+
+            /* "serious" pill in hero h1 — shrink padding */
+            h1 span[style*="border-radius: 100px"] {
+                padding: 4px 18px 8px !important;
+                margin-top: 8px !important;
+            }
+
+            /* Hero sub paragraph (inline style on p) */
+            p[style*="font-size: 18px"] {
+                font-size: 15px !important;
+                line-height: 1.65 !important;
+                margin-bottom: 16px !important;
+            }
+
+            /* ── Cards: reduce padding & radius ── */
+            .glass-card {
+                padding: 18px !important;
+                border-radius: 18px !important;
+            }
+
+            .ultra-card {
+                padding: 20px !important;
+                border-radius: 20px !important;
+            }
+
+            .bento-card {
+                padding: 18px !important;
+            }
+
+            /* ── Grids → single column ── */
+            .grid-cols-2,
+            .grid-cols-3,
+            .grid-cols-4 {
+                grid-template-columns: 1fr !important;
+            }
+
+            .bento-grid {
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+            }
+
+            .col-span-8,
+            .col-span-4,
+            .col-span-6,
+            .col-span-12 {
+                grid-column: span 1 !important;
+            }
+
+            /* Arena grid */
+            #arena .arena-cards-row {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            /* ── How it works vertical steps ── */
+            .vertical-step {
+                grid-template-columns: 44px 1fr !important;
+                gap: 12px !important;
+                padding-bottom: 32px !important;
+            }
+
+            .step-content h3 {
+                font-size: 17px !important;
+            }
+
+            .step-content p {
+                font-size: 14px !important;
+            }
+
+            /* ── Leaderboard ── */
+            .leaderboard-item {
+                padding: 14px 16px !important;
+                gap: 10px !important;
+            }
+
+            .leaderboard-item .rank-number {
+                font-size: 18px !important;
+                width: 36px !important;
+            }
+
+            .leaderboard-item .focus-time {
+                font-size: 16px !important;
+                min-width: 70px !important;
+            }
+
+            .leaderboard-item .user-info {
+                gap: 10px !important;
+            }
+
+            /* ── Waitlist/Vortex section ── */
+            .vortex-section {
+                padding: 80px 0 100px !important;
+            }
+
+            .vortex-input-bar {
+                height: auto !important;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                padding: 10px !important;
+                gap: 8px !important;
+                max-width: calc(100vw - 32px) !important;
+            }
+
+            .vortex-input-bar input {
+                font-size: 14px !important;
+                text-align: center !important;
+                padding: 8px 0 !important;
+            }
+
+            .vortex-input-bar button {
+                width: 100% !important;
+                padding: 13px 20px !important;
+                border-radius: 10px !important;
+                text-align: center !important;
+            }
+
+            /* ── Ticker ── */
+            .ticker-card {
+                width: 250px !important;
+                padding: 14px !important;
+            }
+
+            /* ── Arena section ── */
+            #arena {
+                padding: 60px 0 100px !important;
+            }
+
+            /* ── Pricing ── */
+            .pricing-card {
+                padding: 32px 24px 24px !important;
+            }
+
+            /* ── Footer ── */
+            .footer {
+                padding-top: 40px !important;
+                padding-bottom: 80px !important;
+            }
+
+            /* ── Social cluster ── */
+            .social-cluster {
+                justify-content: center !important;
+            }
+
+            /* Badge */
+            .badge {
+                font-size: 11px !important;
+                padding: 5px 10px !important;
+            }
+
+            /* Checkout modal: full-screen on mobile */
+            .checkout-card {
+                border-radius: 20px !important;
+                padding: 24px !important;
+                max-width: calc(100vw - 32px) !important;
+            }
+        }
+
+        /* ── Very small phones (≤ 380px) — extra aggressive ── */
+        @media (max-width: 380px) {
+
+            h1,
+            h1[style] {
+                font-size: clamp(1.5rem, 8vw, 2rem) !important;
+            }
+
+            h2,
+            h2[style] {
+                font-size: clamp(1.3rem, 6.5vw, 1.75rem) !important;
+            }
+
+            .phone-stack {
+                transform: scale(0.56) !important;
+            }
+
+            .hero-visual {
+                height: 300px !important;
+            }
+
+            .navbar {
+                width: calc(100% - 24px) !important;
+            }
+        }
     </style>
 </head>
 
 <body>
 
-    <!-- Morphing Preloader -->
     <div id="morph-preloader"
         style="position: fixed; inset: 0; background: #070709; z-index: 999999; display: flex; align-items: center; justify-content: center; pointer-events: none; transition: opacity 0.8s ease;">
         <div
@@ -4541,7 +4859,7 @@
     <main>
         <!-- Section 2: Hero -->
         <section class="hero text-center" id="hero" aria-label="Hero"
-            style="min-height: clamp(750px, 100vh, 1000px); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; padding-top: 140px; padding-bottom: 200px;">
+            style="min-height: clamp(750px, 100vh, 1000px); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
             <!-- Live Animated Grid Canvas -->
             <canvas id="grid-canvas" aria-hidden="true"
                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 0.4;"></canvas>
@@ -4563,7 +4881,7 @@
                             DISCIPLINE ENFORCED
                         </span>
                     </div>
-                    <h1 style="margin-bottom: 24px; line-height: 1.1; font-size: clamp(3.5rem, 6vw, 84px);">
+                    <h1 style="margin-bottom: 24px; line-height: 1.1; font-size: clamp(2rem, 6vw, 84px);">
                         <span class="text-gradient">Built for the</span><br>
                         <span
                             style="display: inline-block; padding: 6px 32px 10px; margin-top: 12px; border: 1px solid var(--glass-border); border-radius: 100px; box-shadow: var(--shadow-base); backdrop-filter: blur(12px); background: var(--glass-bg); overflow: visible;">
@@ -4573,7 +4891,8 @@
                     </h1>
                     <p
                         style="font-size: 18px; color: var(--color-text-dim); max-width: 480px; margin-bottom: 32px; line-height: 1.75;">
-                        Start a session. Put real money on the line. Break focus and lose the stake — finish and build
+                        Start a session. Put real money on the line. Break focus and lose the stake — finish and
+                        build
                         your reputation.
                     </p>
 
@@ -4627,7 +4946,8 @@
                             <div>
                                 <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 2px;">
                                     Distraction Blocked</div>
-                                <div style="font-size: 10.5px; color: rgba(255,255,255,0.42);">Instagram prevented</div>
+                                <div style="font-size: 10.5px; color: rgba(255,255,255,0.42);">Instagram prevented
+                                </div>
                             </div>
                         </div>
                         <div
@@ -4651,12 +4971,14 @@
                                 </svg>
                             </div>
                             <div>
-                                <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 2px;">Session
+                                <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 2px;">
+                                    Session
                                     Active</div>
                                 <div style="font-size: 10.5px; color: rgba(255,255,255,0.42);">38:12 remaining</div>
                             </div>
                         </div>
-                        <div style="font-size: 10.5px; color: rgba(255,255,255,0.45); font-weight: 600;">₹50 at stake
+                        <div style="font-size: 10.5px; color: rgba(255,255,255,0.45); font-weight: 600;">₹50 at
+                            stake
                         </div>
                     </div>
 
@@ -4672,9 +4994,11 @@
                                 </svg>
                             </div>
                             <div>
-                                <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 2px;">Flow
+                                <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 2px;">
+                                    Flow
                                     State</div>
-                                <div style="font-size: 10.5px; color: rgba(255,255,255,0.42);">Deep work sustained</div>
+                                <div style="font-size: 10.5px; color: rgba(255,255,255,0.42);">Deep work sustained
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -4687,9 +5011,11 @@
                                 style="width: 34px; height: 34px; min-width: 34px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px;">
                                 🔥</div>
                             <div>
-                                <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 2px;">12 Day
+                                <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 2px;">12
+                                    Day
                                     Focus Streak</div>
-                                <div style="font-size: 10.5px; color: rgba(255,255,255,0.42);">Momentum Building</div>
+                                <div style="font-size: 10.5px; color: rgba(255,255,255,0.42);">Momentum Building
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -4713,14 +5039,16 @@
                                     <div
                                         style="font-size: 56px; font-weight: 800; font-family: var(--font-display); color: #fff; line-height: 1; margin-bottom: 8px; letter-spacing: -0.02em;">
                                         38:12</div>
-                                    <div style="font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 600;">Deep
+                                    <div style="font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 600;">
+                                        Deep
                                         Focus Mode</div>
                                 </div>
 
                                 <!-- Stake Amount -->
                                 <div
                                     style="background: linear-gradient(135deg, rgba(96,165,250,0.15), rgba(167,139,250,0.15)); border: 1px solid rgba(96,165,250,0.3); border-radius: 16px; padding: 16px; text-align: center; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(96,165,250,0.2);">
-                                    <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 6px;">At
+                                    <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 6px;">
+                                        At
                                         Stake</div>
                                     <div style="font-size: 32px; font-weight: 800; color: #fff; line-height: 1;">
                                         &#x20B9;50</div>
@@ -4771,7 +5099,8 @@
             <div class="container">
                 <div class="section-header" data-reveal>
                     <h2 class="text-gradient">Why <span class="accent-serif">most</span> focus tools fail.</h2>
-                    <p style="max-width: 600px; margin: 0 auto; font-size: var(--text-lg);">Most productivity tools fail
+                    <p style="max-width: 600px; margin: 0 auto; font-size: var(--text-lg);">Most productivity tools
+                        fail
                         for predictable reasons. Your brain ignores tools with no consequences.</p>
                 </div>
                 <div class="bento-grid">
@@ -4788,7 +5117,8 @@
                             </p>
                             <div
                                 style="padding: 12px 16px; background: rgba(255, 77, 79, 0.08); border: 1px solid rgba(255, 77, 79, 0.2); border-radius: 8px; font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5;">
-                                <span style="color: #ff4d4f; font-weight: 700;">92%</span> of people quit timers early
+                                <span style="color: #ff4d4f; font-weight: 700;">92%</span> of people quit timers
+                                early
                                 with no penalty
                             </div>
                         </div>
@@ -4799,10 +5129,12 @@
                             style="position: relative; z-index: 2; border-color: rgba(245, 158, 11, 0.3); color: #f59e0b; background: rgba(245, 158, 11, 0.08);">
                             Case #02</div>
                         <div style="position: relative; z-index: 2; margin-top: 16px;">
-                            <h3 style="color: #FFFFFF; font-size: 24px; margin-bottom: 12px;">No real commitment</h3>
+                            <h3 style="color: #FFFFFF; font-size: 24px; margin-bottom: 12px;">No real commitment
+                            </h3>
                             <p
                                 style="color: rgba(255,255,255,0.65); max-width: 400px; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
-                                Timers can be paused, skipped, or cheated. Your brain knows the rules are flexible.</p>
+                                Timers can be paused, skipped, or cheated. Your brain knows the rules are flexible.
+                            </p>
                             <div
                                 style="padding: 12px 16px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5;">
                                 Average Pomodoro completion: <span style="color: #f59e0b; font-weight: 700;">38%</span>
@@ -4815,7 +5147,8 @@
                             style="position: relative; z-index: 2; border-color: rgba(139, 92, 246, 0.3); color: #a78bfa; background: rgba(139, 92, 246, 0.08);">
                             Case #03</div>
                         <div style="position: relative; z-index: 2; margin-top: 16px;">
-                            <h3 style="color: #FFFFFF; font-size: 24px; margin-bottom: 12px;">Your environment fights
+                            <h3 style="color: #FFFFFF; font-size: 24px; margin-bottom: 12px;">Your environment
+                                fights
                                 you</h3>
                             <p
                                 style="color: rgba(255,255,255,0.65); max-width: 400px; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
@@ -4852,12 +5185,14 @@
                                 <h3 style="color: #FFFFFF; font-size: 24px; margin-bottom: 12px;">Real Stakes</h3>
                                 <p
                                     style="color: rgba(255,255,255,0.65); max-width: 400px; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
-                                    Exit your session early or trigger a blocked app, and your stake is gone. All lost
+                                    Exit your session early or trigger a blocked app, and your stake is gone. All
+                                    lost
                                     stakes are strictly donated to open source devs and high-impact charities.</p>
                             </div>
                             <div
                                 style="margin-top: auto; padding: 12px 16px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px; font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5;">
-                                Currently at risk: <span style="color: #22c55e; font-weight: 700;">₹500</span> • Session
+                                Currently at risk: <span style="color: #22c55e; font-weight: 700;">₹500</span> •
+                                Session
                                 ends in <span style="color: #22c55e; font-weight: 700;">45:00</span>
                             </div>
                         </div>
@@ -4870,7 +5205,8 @@
                         <div
                             style="display: flex; flex-direction: column; height: 100%; position: relative; z-index: 2; margin-top: 16px;">
                             <div>
-                                <h3 style="color: #FFFFFF; font-size: 24px; margin-bottom: 12px;">Environment Lock</h3>
+                                <h3 style="color: #FFFFFF; font-size: 24px; margin-bottom: 12px;">Environment Lock
+                                </h3>
                                 <p
                                     style="color: rgba(255,255,255,0.65); max-width: 400px; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
                                     Apps, tabs, and notifications are blocked. Switching context instantly fails the
@@ -4895,12 +5231,14 @@
                                 </h3>
                                 <p
                                     style="color: rgba(255,255,255,0.65); max-width: 400px; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
-                                    Compete globally on focus hours. Maintain your streak to climb ranks and showcase
+                                    Compete globally on focus hours. Maintain your streak to climb ranks and
+                                    showcase
                                     your absolute discipline.</p>
                             </div>
                             <div
                                 style="margin-top: auto; padding: 12px 16px; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 8px; font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5;">
-                                Your rank: <span style="color: #a855f7; font-weight: 700;">#4</span> globally • Total
+                                Your rank: <span style="color: #a855f7; font-weight: 700;">#4</span> globally •
+                                Total
                                 hours: <span style="color: #a855f7; font-weight: 700;">14.2</span>
                             </div>
                         </div>
@@ -5000,7 +5338,8 @@
                         <div style="position: relative; z-index: 2;">
                             <div style="font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 6px;">Ranked
                                 Focus Battles</div>
-                            <div style="font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.55;">Discipline
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.55;">
+                                Discipline
                                 determines the winner.</div>
                         </div>
                     </div>
@@ -5008,9 +5347,11 @@
                     <div class="ultra-card" style="padding: 28px 16px;">
                         <div class="ultra-glow"></div>
                         <div style="position: relative; z-index: 2;">
-                            <div style="font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 6px;">Stake-Based
+                            <div style="font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 6px;">
+                                Stake-Based
                                 Competition</div>
-                            <div style="font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.55;">Break focus
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.55;">Break
+                                focus
                                 and your stake is forfeited.</div>
                         </div>
                     </div>
@@ -5020,7 +5361,8 @@
                         <div style="position: relative; z-index: 2;">
                             <div style="font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 6px;">Live
                                 Leaderboards</div>
-                            <div style="font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.55;">See who holds
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.55;">See who
+                                holds
                                 the strongest streak.</div>
                         </div>
                     </div>
@@ -5028,9 +5370,11 @@
                     <div class="ultra-card" style="padding: 28px 16px;">
                         <div class="ultra-glow"></div>
                         <div style="position: relative; z-index: 2;">
-                            <div style="font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 6px;">Real-Time
+                            <div style="font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 6px;">
+                                Real-Time
                                 Arena Sessions</div>
-                            <div style="font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.55;">Join active
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.55;">Join
+                                active
                                 battles instantly.</div>
                         </div>
                     </div>
@@ -5102,9 +5446,11 @@
                         <!-- Footer -->
                         <div
                             style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between;">
-                            <span style="font-size: 11px; color: rgba(255,255,255,0.25);">Focus time remaining</span>
+                            <span style="font-size: 11px; color: rgba(255,255,255,0.25);">Focus time
+                                remaining</span>
                             <a href="#waitlist" class="btn btn-primary btn-magnetic"
-                                style="height: 32px; padding: 0 18px; font-size: 12px; border-radius: 100px;">Get Early
+                                style="height: 32px; padding: 0 18px; font-size: 12px; border-radius: 100px;">Get
+                                Early
                                 Access</a>
                         </div>
 
@@ -5119,7 +5465,8 @@
             <div class="container">
                 <div class="section-header" data-reveal style="margin-bottom: 80px;">
                     <h2 class="text-gradient">Track your <span class="accent-serif">progress</span>.</h2>
-                    <p>Real-time metrics that prove you're doing the work. Every session, every streak, every dollar at
+                    <p>Real-time metrics that prove you're doing the work. Every session, every streak, every dollar
+                        at
                         stake—all measured and displayed.</p>
                 </div>
                 <div class="bento-grid">
@@ -5450,8 +5797,8 @@
                             <div
                                 style="margin-top: auto; padding: 14px 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.6; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);">
                                 This week: <span id="weekly-hours"
-                                    style="color: #ffffff; font-weight: 700; font-size: 14px;">32.4 hours</span> • <span
-                                    style="color: #34D399; font-weight: 700;">↑ 18%</span> from last week
+                                    style="color: #ffffff; font-weight: 700; font-size: 14px;">32.4 hours</span> •
+                                <span style="color: #34D399; font-weight: 700;">↑ 18%</span> from last week
                             </div>
                         </div>
                     </div>
@@ -5651,7 +5998,8 @@
                                 style="margin-top: auto; padding: 14px 18px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.06) 100%); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 12px; font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.6; box-shadow: inset 0 1px 0 rgba(34, 197, 94, 0.15);">
                                 Status: <span
                                     style="color: #4ADE80; font-weight: 700; font-size: 14px;">Exceptional</span> •
-                                <span style="color: #4ADE80; font-weight: 700; font-size: 14px;">24</span> sessions •
+                                <span style="color: #4ADE80; font-weight: 700; font-size: 14px;">24</span> sessions
+                                •
                                 Badge: <span style="color: #86EFAC; font-weight: 700; font-size: 14px;">No-Slip
                                     x4</span>
                             </div>
@@ -5697,8 +6045,10 @@
                                 style="margin-top: auto; padding: 14px 18px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.06) 100%); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 12px; font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.6; box-shadow: inset 0 1px 0 rgba(168, 85, 247, 0.15);">
                                 Status: <span style="color: #C084FC; font-weight: 700; font-size: 14px;">↗
                                     Accelerating</span> • Avg <span
-                                    style="color: #C084FC; font-weight: 700; font-size: 14px;">2.4hrs</span> • Combo:
-                                <span style="color: #DDD6FE; font-weight: 700; font-size: 14px;">x6 Flow Chain</span>
+                                    style="color: #C084FC; font-weight: 700; font-size: 14px;">2.4hrs</span> •
+                                Combo:
+                                <span style="color: #DDD6FE; font-weight: 700; font-size: 14px;">x6 Flow
+                                    Chain</span>
                             </div>
                         </div>
                     </div>
@@ -5770,7 +6120,8 @@
                                     <div class="ticker-card-status">Forfeited ₹50</div>
                                 </div>
                             </div>
-                            <p class="ticker-card-quote">"Thought I could quickly check Twitter. The system instantly
+                            <p class="ticker-card-quote">"Thought I could quickly check Twitter. The system
+                                instantly
                                 captured my stake. Brutal but effective."</p>
                         </div>
 
@@ -5806,7 +6157,8 @@
                                     <div class="ticker-card-status">Secured ₹50</div>
                                 </div>
                             </div>
-                            <p class="ticker-card-quote">"It's insane how much you can get done in 90 minutes when there
+                            <p class="ticker-card-quote">"It's insane how much you can get done in 90 minutes when
+                                there
                                 is actual money on the line. Flow state achieved."</p>
                         </div>
 
@@ -5819,7 +6171,8 @@
                                     <div class="ticker-card-status">Forfeited ₹50</div>
                                 </div>
                             </div>
-                            <p class="ticker-card-quote">"Thought I could quickly check Twitter. The system instantly
+                            <p class="ticker-card-quote">"Thought I could quickly check Twitter. The system
+                                instantly
                                 captured my stake. Brutal but effective."</p>
                         </div>
 
@@ -5855,7 +6208,8 @@
                                     <div class="ticker-card-status">Secured ₹50</div>
                                 </div>
                             </div>
-                            <p class="ticker-card-quote">"It's insane how much you can get done in 90 minutes when there
+                            <p class="ticker-card-quote">"It's insane how much you can get done in 90 minutes when
+                                there
                                 is actual money on the line. Flow state achieved."</p>
                         </div>
                     </div>
@@ -6134,11 +6488,13 @@
             <div class="vortex-content container">
                 <!-- Section Headline -->
                 <div style="text-align: center; margin-bottom: 40px;">
-                    <h2 style="font-size: 36px; margin-bottom: 12px; font-weight: 700; color: #FFFFFF;">Join the Private
+                    <h2 style="font-size: 36px; margin-bottom: 12px; font-weight: 700; color: #FFFFFF;">Join the
+                        Private
                         Beta</h2>
                     <p
                         style="font-size: 15px; color: rgba(255,255,255,0.5); max-width: 440px; margin: 0 auto; line-height: 1.5;">
-                        Early access invites sent in waves. <span style="color: rgba(255,255,255,0.7);">Limited spots —
+                        Early access invites sent in waves. <span style="color: rgba(255,255,255,0.7);">Limited
+                            spots —
                             join before we close the list.</span>
                     </p>
                 </div>
@@ -6340,7 +6696,8 @@
                     </button>
                 </form>
 
-                <p class="auth-footer-text">By signing in, you agree to LockIn's <a href="/terms">Terms of Service</a>
+                <p class="auth-footer-text">By signing in, you agree to LockIn's <a href="/terms">Terms of
+                        Service</a>
                     and <a href="/privacy">Privacy Policy</a>.</p>
             </div>
         </div>
@@ -6354,7 +6711,8 @@
         <div class="container footer-grid">
             <div>
                 <a href="#" class="nav-logo" aria-label="LockIn Home" style="margin-bottom: var(--space-3);">LOCKIN</a>
-                <p style="font-size: var(--text-sm); max-width: 250px;">Focus sessions with real consequences. Built for
+                <p style="font-size: var(--text-sm); max-width: 250px;">Focus sessions with real consequences. Built
+                    for
                     high
                     performance.</p>
             </div>
@@ -6473,7 +6831,8 @@
                     style="font-size:11px;letter-spacing:0.08em;color:var(--color-text-muted);text-transform:uppercase;margin-bottom:6px">
                     Advertisement</div>
                 <h3 style="font-size:18px;font-weight:700;margin-bottom:4px">Watch to unlock your session</h3>
-                <p style="font-size:13px;color:var(--color-text-dim)">This free session is sponsored by an ad. Please
+                <p style="font-size:13px;color:var(--color-text-dim)">This free session is sponsored by an ad.
+                    Please
                     watch it completely.</p>
             </div>
             <!-- AdSense unit — replace ca-pub-XXXXXXXXXXXXXXXX and data-ad-slot with your values -->
