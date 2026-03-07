@@ -32,12 +32,8 @@ let _GOOGLE_CLIENT_ID = '';
     try {
         const cfg = await fetch('/api/config').then(r => r.json());
         _GOOGLE_CLIENT_ID = cfg.googleClientId || '';
-        if (_GOOGLE_CLIENT_ID) {
-            const s = document.createElement('script');
-            s.src = 'https://accounts.google.com/gsi/client';
-            s.async = true; s.defer = true;
-            s.onload = () => { if (window._renderGoogleButtons) window._renderGoogleButtons(); };
-            document.head.appendChild(s);
+        if (_GOOGLE_CLIENT_ID && window._renderGoogleButtons) {
+            window._renderGoogleButtons();
         }
     } catch { /* server offline or no client ID — silently skip */ }
 })();
@@ -1348,12 +1344,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ── Google Sign-In ── */
     function renderGoogleButtons() {
-        if (!window.google || !_GOOGLE_CLIENT_ID) return;
+        if (!window.google || !_GOOGLE_CLIENT_ID) {
+            // If the script failed to load, ensure custom buttons are visible and functional
+            [['google-custom-btn-login', 'login-error'],
+            ['google-custom-btn-register', 'register-error']].forEach(([customId, errorId]) => {
+                const btn = document.getElementById(customId);
+                if (btn) {
+                    btn.style.display = 'flex';
+                    btn.onclick = () => {
+                        const errEl = document.getElementById(errorId);
+                        if (errEl) {
+                            errEl.className = 'auth-msg error';
+                            errEl.textContent = 'Google Login is currently unavailable. Please check your connection or use email/password.';
+                        }
+                    };
+                }
+            });
+            return;
+        }
+
         google.accounts.id.initialize({
             client_id: _GOOGLE_CLIENT_ID,
             callback: handleGoogleCredential,
             auto_select: false,
         });
+
         [['google-btn-login', 'google-custom-btn-login'],
         ['google-btn-register', 'google-custom-btn-register']].forEach(([gisId, customId]) => {
             const gisContainer = document.getElementById(gisId);
