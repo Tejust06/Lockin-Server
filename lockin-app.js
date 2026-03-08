@@ -1269,52 +1269,125 @@ document.addEventListener('DOMContentLoaded', () => {
     wirePasswordToggle('register-pw-toggle', 'register-password');
 
     /* ── Google Sign-In ── */
-    function renderGoogleButtons() {
-        const clientId = window._GOOGLE_CLIENT_ID || '112501900352-0h0s42t6uk25pna2h3hujlgk73beenia.apps.googleusercontent.com'; // Fallback to provided config
+    function getActiveGoogleErrorElement() {
+        return loginForm?.classList.contains('active') ? loginError : registerError;
+    }
 
-        if (!window.google) {
-            // Script totally failed to load
-            [['google-custom-btn-login', 'login-error'],
-            ['google-custom-btn-register', 'register-error']].forEach(([customId, errorId]) => {
-                const btn = document.getElementById(customId);
-                if (btn) {
-                    btn.style.display = 'flex';
-                    btn.onclick = () => {
-                        const errEl = document.getElementById(errorId);
-                        if (errEl) {
-                            errEl.className = 'auth-msg error';
-                            errEl.textContent = 'Google Login script blocked. Please check your connection or use email/password.';
-                        }
-                    };
-                }
+    function getGoogleAuthErrorMessage(error) {
+        const code = error?.code || '';
+        if (code === 'auth/popup-blocked') return 'Popup blocked. Please allow popups or try again.';
+        if (code === 'auth/popup-closed-by-user') return 'Google sign-in was cancelled.';
+        if (code === 'auth/unauthorized-domain') return 'This domain is not authorized for Google sign-in.';
+        if (code === 'auth/operation-not-allowed') return 'Google sign-in is disabled in Firebase Authentication.';
+        if (code === 'auth/network-request-failed') return 'Network error. Check your internet connection and retry.';
+        return error?.message || 'Google sign-in failed. Please try again.';
+    }
+
+    function showGoogleAuthError(error, explicitErrorEl = null) {
+        const errEl = explicitErrorEl || getActiveGoogleErrorElement();
+        if (!errEl) return;
+        errEl.className = 'auth-msg error';
+        errEl.textContent = getGoogleAuthErrorMessage(error);
+    }
+
+    async function syncGoogleUserProfile(result) {
+        const user = result?.user;
+        if (!user) return;
+
+        const safeEmail = user.email || '';
+        const safeUsername = user.displayName || (safeEmail ? safeEmail.split('@')[0] : 'User');
+        const profilePayload = {
+            username: safeUsername,
+            email: safeEmail,
+            normalizedEmail: normalizeEmail(safeEmail),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+
+        // New users receive default dashboard stats.
+        if (result?.additionalUserInfo?.isNewUser) {
+            Object.assign(profilePayload, {
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                focusScore: 100,
+                flowScore: 0,
+                totalLocked: 0,
+                weeklyHours: 0,
+                protectionRate: 100,
             });
-            return;
         }
 
-        google.accounts.id.initialize({
-            client_id: clientId,
-            callback: handleGoogleCredential,
-            auto_select: false,
-        });
+        await db.collection('users').doc(user.uid).set(profilePayload, { merge: true });
+    }
 
-        // Use the official Google rendered buttons to ensure popups are not blocked
-        [['google-btn-login', 'google-custom-btn-login'],
-        ['google-btn-register', 'google-custom-btn-register']].forEach(([gisId, customId]) => {
-            const gisContainer = document.getElementById(gisId);
-            const customBtn = document.getElementById(customId);
-            if (!gisContainer) return;
-            gisContainer.innerHTML = '';
-            google.accounts.id.renderButton(gisContainer, {
-                theme: 'filled_black', shape: 'rectangular',
-                text: 'continue_with', size: 'large', width: 360,
+    async function finalizeGoogleSignIn(result) {
+        try {
+            await syncGoogleUserProfile(result);
+        } catch (profileError) {
+            // Do not block auth success if profile sync fails temporarily.
+            console.warn('Google profile sync failed:', profileError);
+        }
+
+        updateNavAuth();
+        closeAuthModal();
+    }
+
+    async function startGoogleSignIn(explicitErrorEl = null) {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+
+        try {
+            const result = await auth.signInWithPopup(provider);
+            await finalizeGoogleSignIn(result);
+            return;
+        } catch (error) {
+            const useRedirectFallback =
+                error?.code === 'auth/popup-blocked' ||
+                error?.code === 'auth/operation-not-supported-in-this-environment';
+            if (useRedirectFallback) {
+                try {
+                    await auth.signInWithRedirect(provider);
+                    return;
+                } catch (redirectError) {
+                    console.error('Firebase Google Redirect Error:', redirectError);
+                    showGoogleAuthError(redirectError, explicitErrorEl);
+                    return;
+                }
+            }
+
+            console.error('Firebase Google Popup Error:', error);
+            showGoogleAuthError(error, explicitErrorEl);
+        }
+    }
+
+    function wireGoogleButton(customId, errorId) {
+        const btn = document.getElementById(customId);
+        const errEl = document.getElementById(errorId);
+        if (!btn) return;
+
+        btn.style.display = 'flex';
+        btn.onclick = async (e) => {
+            e.preventDefault();
+            if (errEl) {
+                errEl.className = 'auth-msg';
+                errEl.textContent = '';
+            }
+            await startGoogleSignIn(errEl);
+        };
+    }
+
+    function renderGoogleButtons() {
+        [['google-btn-login', 'google-custom-btn-login', 'login-error'],
+        ['google-btn-register', 'google-custom-btn-register', 'register-error']]
+            .forEach(([gisId, customId, errorId]) => {
+                const gisContainer = document.getElementById(gisId);
+                if (gisContainer) {
+                    gisContainer.innerHTML = '';
+                    gisContainer.style.display = 'none';
+                }
+                wireGoogleButton(customId, errorId);
             });
-            gisContainer.style.display = 'flex';
-            gisContainer.style.justifyContent = 'center';
-            if (customBtn) customBtn.style.display = 'none';
-        });
     }
     window._renderGoogleButtons = renderGoogleButtons;
-    if (window.google) renderGoogleButtons();
+    renderGoogleButtons();
 
     // Helper function to normalize emails to prevent duplicates via aliases or dots
     function normalizeEmail(emailStr) {
@@ -1338,69 +1411,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return e;
     }
 
-    async function handleGoogleCredential(response) {
-        const activeErrEl = loginForm?.classList.contains('active')
-            ? loginError : registerError;
-
-        try {
-            // Create a Firebase credential from the Google ID token
-            const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
-
-            // Sign in with Firebase
-            const result = await auth.signInWithCredential(credential);
-
-            // If it's a new user (first time signing in with Google)
-            if (result.additionalUserInfo && result.additionalUserInfo.isNewUser) {
-                const user = result.user;
-
-                try {
-                    const normEmail = normalizeEmail(user.email);
-
-                    const existingUsers = await db.collection('users').where('normalizedEmail', '==', normEmail).get();
-                    if (!existingUsers.empty) {
-                        const existingDoc = existingUsers.docs[0];
-                        if (existingDoc.id !== user.uid) {
-                            throw new Error("This email (or an alias of it) is already registered. Please login to your existing account.");
-                        }
-                    }
-
-                    const exactMatches = await db.collection('users').where('email', '==', user.email).get();
-                    if (!exactMatches.empty) {
-                        const exactDoc = exactMatches.docs[0];
-                        if (exactDoc.id !== user.uid) {
-                            throw new Error("This exact email is already registered. Please login to your existing account.");
-                        }
-                    }
-
-                    // Initialize default user data in Firestore
-                    await db.collection('users').doc(user.uid).set({
-                        username: user.displayName || user.email.split('@')[0],
-                        email: user.email,
-                        normalizedEmail: normEmail,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        focusScore: 100,
-                        flowScore: 0,
-                        totalLocked: 0,
-                        weeklyHours: 0,
-                        protectionRate: 100
-                    });
-
-                } catch (checkError) {
-                    await user.delete();
-                    throw checkError;
-                }
-            }
-
-            updateNavAuth();
-            closeAuthModal();
-        } catch (error) {
-            console.error("Firebase Google Auth Error:", error);
-            if (activeErrEl) {
-                activeErrEl.className = 'auth-msg error';
-                activeErrEl.textContent = error.message || 'Google sign-in failed via Firebase';
-            }
-        }
-    }
+    auth.getRedirectResult()
+        .then(async (result) => {
+            if (!result?.user) return;
+            if (result?.additionalUserInfo?.providerId && result.additionalUserInfo.providerId !== 'google.com') return;
+            await finalizeGoogleSignIn(result);
+        })
+        .catch((error) => {
+            console.error('Firebase Google Redirect Result Error:', error);
+            showGoogleAuthError(error);
+        });
 
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
