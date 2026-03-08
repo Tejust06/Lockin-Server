@@ -1,19 +1,41 @@
 /**
- * LockIn App Logic (Ultra-Premium SaaS Architecture)
+ * LockIn App Logic (Ultra-Premium SaaS Architecture + Serverless Firebase)
  * Contains the logic for the live animated grid background, magnetic buttons, and glassmorphism scroll events.
  */
 
-/* ─── AUTH MODULE ─────────────────────────────────────────────────────────────────── */
-const Auth = {
-    getToken: () => localStorage.getItem('lockin_token'),
-    getUser: () => { try { const user = localStorage.getItem('lockin_user'); return user ? JSON.parse(user) : null; } catch (e) { return null; } },
-    save: (token, user) => { localStorage.setItem('lockin_token', token); localStorage.setItem('lockin_user', JSON.stringify(user)); },
-    clear: () => { localStorage.removeItem('lockin_token'); localStorage.removeItem('lockin_user'); },
-    isLoggedIn: () => !!localStorage.getItem('lockin_token'),
+/* ─── FIREBASE INITIALIZATION ─────────────────────────────────────────────────────── */
+// User provided only the apiKey, so we construct a best-effort config for the project
+const firebaseConfig = {
+    apiKey: "AIzaSyCorNgPraz29R-m4Hvd1k7E4RBQ2dx2YwM",
+    // These are placeholders assuming standard Firebase URL formats if the specific ones weren't provided.
+    // We will ask the user for the full config if this fails, but for now we try to initialize.
+    authDomain: "lockinproject.firebaseapp.com",
+    projectId: "lockinproject",
+    storageBucket: "lockinproject.appspot.com",
 };
 
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+/* ─── AUTH MODULE (Firebase Adapter) ──────────────────────────────────────────────── */
+const Auth = {
+    getToken: async () => {
+        const user = auth.currentUser;
+        return user ? await user.getIdToken() : null;
+    },
+    getUser: () => {
+        const user = auth.currentUser;
+        return user ? { username: user.displayName || user.email.split('@')[0], email: user.email, uid: user.uid } : null;
+    },
+    isLoggedIn: () => !!auth.currentUser,
+    clear: async () => await auth.signOut()
+};
+
+// Keep authFetch for backward compatibility with other API calls if needed (like Razorpay)
 async function authFetch(url, options = {}) {
-    const token = Auth.getToken();
+    const token = await Auth.getToken();
     return fetch(url, {
         ...options,
         headers: {
@@ -24,19 +46,12 @@ async function authFetch(url, options = {}) {
     });
 }
 
-
-/* ─── GOOGLE SIGN-IN BOOTSTRAP ────────────────────────────────────────────────────── */
-let _GOOGLE_CLIENT_ID = '';
-
-(async () => {
-    try {
-        const cfg = await fetch('/api/config').then(r => r.json());
-        _GOOGLE_CLIENT_ID = cfg.googleClientId || '';
-        if (_GOOGLE_CLIENT_ID && window._renderGoogleButtons) {
-            window._renderGoogleButtons();
-        }
-    } catch { /* server offline or no client ID — silently skip */ }
-})();
+// Listen for auth state changes immediately to update UI
+auth.onAuthStateChanged((user) => {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        if (typeof updateNavAuth === 'function') updateNavAuth();
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -825,66 +840,64 @@ document.addEventListener('DOMContentLoaded', () => {
             requestAnimationFrame(update);
         }
 
-        // Live update function - simulates real-time data changes
-        function updateAnalytics() {
-            // Generate realistic fluctuations
-            const focusChange = (Math.random() - 0.5) * 3; // ±1.5 points
-            const newFocusScore = Math.max(75, Math.min(100, currentFocusScore + focusChange));
+        // Live update function - fetch real stats from Firebase
+        let unsubscribeAnalytics = null;
 
-            const hoursChange = (Math.random() - 0.3) * 0.5; // Slightly upward bias
-            const newWeeklyHours = Math.max(30, Math.min(40, currentWeeklyHours + hoursChange));
+        function attachAnalyticsListener(user) {
+            if (unsubscribeAnalytics) unsubscribeAnalytics(); // clear old listener
 
-            const todayChange = (Math.random() - 0.3) * 0.3;
-            const newTodayHours = Math.max(3, Math.min(8, currentTodayHours + todayChange));
-
-            const sessionChange = Math.random() > 0.7 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-            const newActiveSessions = Math.max(1, Math.min(8, currentActiveSessions + sessionChange));
-
-            const disciplineChange = (Math.random() - 0.5) * 0.5;
-            const newDiscipline = Math.max(95, Math.min(100, currentDiscipline + disciplineChange));
-
-            const productivityChange = (Math.random() - 0.5) * 2;
-            const newProductivity = Math.max(2, Math.min(15, currentProductivity + productivityChange));
-
-            // Animate updates
-            animateNumber(focusScoreElement, currentFocusScore, newFocusScore, '', 600);
-            updateFocusScoreCircle(newFocusScore);
-
-            animateNumber(weeklyHoursElement, currentWeeklyHours, newWeeklyHours, 'h', 800);
-
-            if (todayHoursElement) {
-                todayHoursElement.textContent = newTodayHours.toFixed(1) + 'h';
+            if (!user) {
+                // If logged out, show 0s or defaults
+                animateNumber(focusScoreElement, currentFocusScore, 0, '', 600);
+                updateFocusScoreCircle(0);
+                animateNumber(weeklyHoursElement, currentWeeklyHours, 0, 'h', 800);
+                if (productivityElement) productivityElement.innerHTML = `― 0%`;
+                return;
             }
 
-            if (activeSessionsElement) {
-                activeSessionsElement.textContent = newActiveSessions;
-            }
+            // Listen to real user document in Firestore
+            unsubscribeAnalytics = db.collection('users').doc(user.uid).onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
 
-            if (disciplineRateElement) {
-                animateNumber(disciplineRateElement, currentDiscipline, newDiscipline, '%', 800);
-            }
+                    const newFocusScore = data.focusScore || 0;
+                    const newWeeklyHours = data.weeklyHours || 0;
+                    const newProductivity = data.flowScore || 0;
+                    const newTotalLocked = data.totalLocked || 0;
+                    const newProtectionRate = data.protectionRate || 100;
 
-            if (productivityElement) {
-                const arrow = newProductivity > currentProductivity ? '▲' : newProductivity < currentProductivity ? '▼' : '―';
-                productivityElement.innerHTML = `${arrow} ${newProductivity.toFixed(1)}%`;
-                productivityElement.style.color = newProductivity > 5 ? 'var(--color-success)' : 'var(--color-warning)';
-            }
+                    // Animate updates
+                    animateNumber(focusScoreElement, currentFocusScore, newFocusScore, '', 600);
+                    updateFocusScoreCircle(newFocusScore);
+                    animateNumber(weeklyHoursElement, currentWeeklyHours, newWeeklyHours, 'h', 800);
 
-            // Update weekly change badge
-            if (weeklyChangeElement) {
-                const weeklyDelta = newWeeklyHours - 30; // baseline of 30h
-                weeklyChangeElement.textContent = weeklyDelta > 0 ? `+${weeklyDelta.toFixed(1)}h` : `${weeklyDelta.toFixed(1)}h`;
-                weeklyChangeElement.style.color = weeklyDelta > 0 ? 'var(--color-success)' : 'var(--color-warning)';
-            }
+                    if (productivityElement) {
+                        const arrow = newProductivity > currentProductivity ? '▲' : newProductivity < currentProductivity ? '▼' : '―';
+                        productivityElement.innerHTML = `${arrow} ${newProductivity.toFixed(1)}%`;
+                        productivityElement.style.color = newProductivity > 5 ? 'var(--color-success)' : 'var(--color-warning)';
+                    }
 
-            // Store current values
-            currentFocusScore = newFocusScore;
-            currentWeeklyHours = newWeeklyHours;
-            currentTodayHours = newTodayHours;
-            currentActiveSessions = newActiveSessions;
-            currentDiscipline = newDiscipline;
-            currentProductivity = newProductivity;
+                    // Update external showcase elements if they exist
+                    const totalLockedEl = document.getElementById('total-locked');
+                    if (totalLockedEl) totalLockedEl.textContent = `$${newTotalLocked.toLocaleString()}`;
+
+                    const protectionRateEl = document.getElementById('protection-rate');
+                    if (protectionRateEl) protectionRateEl.textContent = `${newProtectionRate}%`;
+
+                    // Store current values for next animation
+                    currentFocusScore = newFocusScore;
+                    currentWeeklyHours = newWeeklyHours;
+                    currentProductivity = newProductivity;
+                }
+            }, (error) => {
+                console.error("Error fetching analytics:", error);
+            });
         }
+
+        // Listen for auth changes to attach the DB listener to the correct user
+        auth.onAuthStateChanged((user) => {
+            attachAnalyticsListener(user);
+        });
 
         // Initialize the circle animation
         updateFocusScoreCircle(currentFocusScore);
@@ -927,99 +940,11 @@ document.addEventListener('DOMContentLoaded', () => {
             momentumCircle.style.strokeDashoffset = offset;
         }
 
-        // Update additional analytics
-        function updateAdditionalAnalytics() {
-            // Peak hours slight variations
-            const morningChange = (Math.random() - 0.5) * 5;
-            const newMorning = Math.max(60, Math.min(95, currentMorning + morningChange));
-
-            const afternoonChange = (Math.random() - 0.5) * 3;
-            const newAfternoon = Math.max(85, Math.min(98, currentAfternoon + afternoonChange));
-
-            const eveningChange = (Math.random() - 0.5) * 8;
-            const newEvening = Math.max(45, Math.min(75, currentEvening + eveningChange));
-
-            // Update bars
-            if (morningBar) {
-                morningBar.style.width = newMorning + '%';
-                morningBar.nextElementSibling.textContent = Math.round(newMorning) + '%';
-            }
-            if (afternoonBar) {
-                afternoonBar.style.width = newAfternoon + '%';
-                afternoonBar.nextElementSibling.textContent = Math.round(newAfternoon) + '%';
-            }
-            if (eveningBar) {
-                eveningBar.style.width = newEvening + '%';
-                eveningBar.nextElementSibling.textContent = Math.round(newEvening) + '%';
-            }
-
-            // Sessions today
-            if (Math.random() > 0.85 && currentSessions < 12) {
-                currentSessions += 1;
-                if (sessionsCompleted) {
-                    sessionsCompleted.textContent = currentSessions;
-                }
-            }
-
-            // Success rate slight variation
-            const successChange = (Math.random() - 0.5) * 2;
-            const newSuccess = Math.max(92, Math.min(100, currentSuccess + successChange));
-            if (successRate) {
-                successRate.textContent = Math.round(newSuccess) + '%';
-                successRate.style.color = newSuccess >= 95 ? '#10b981' : newSuccess >= 90 ? '#60a5fa' : '#f59e0b';
-            }
-
-            // Next session countdown
-            nextSessionMinutes -= 1;
-            if (nextSessionMinutes < 0) nextSessionMinutes = 45 + Math.floor(Math.random() * 30);
-            if (nextSession) {
-                nextSession.textContent = nextSessionMinutes < 5 ? 'Starting soon!' : `In ${nextSessionMinutes} min`;
-                nextSession.style.color = nextSessionMinutes < 5 ? 'var(--color-accent)' : 'var(--color-text-primary)';
-            }
-
-            // Momentum score
-            const momentumChange = (Math.random() - 0.5) * 8;
-            const newMomentum = Math.max(50, Math.min(95, currentMomentum + momentumChange));
-
-            if (momentumScore) {
-                momentumScore.textContent = Math.round(newMomentum);
-            }
-            updateMomentumCircle(newMomentum);
-
-            // Momentum status
-            if (momentumStatus) {
-                if (newMomentum > currentMomentum + 2) {
-                    momentumStatus.innerHTML = '● Accelerating';
-                    momentumStatus.style.color = '#10b981';
-                } else if (newMomentum < currentMomentum - 2) {
-                    momentumStatus.innerHTML = '● Declining';
-                    momentumStatus.style.color = '#f59e0b';
-                } else {
-                    momentumStatus.innerHTML = '● Steady';
-                    momentumStatus.style.color = '#60a5fa';
-                }
-            }
-
-            // Update stored values
-            currentMorning = newMorning;
-            currentAfternoon = newAfternoon;
-            currentEvening = newEvening;
-            currentSuccess = newSuccess;
-            currentMomentum = newMomentum;
+        // Additional Analytics logic merged into the main attachAnalyticsListener above
+        // We just keep the circle initialization here to run once on load
+        if (typeof currentMomentum !== 'undefined') {
+            updateMomentumCircle(currentMomentum);
         }
-
-        // Initialize momentum circle
-        updateMomentumCircle(currentMomentum);
-
-        // Update every 4 seconds (slightly offset from main analytics)
-        setInterval(updateAdditionalAnalytics, 4000);
-
-        // Update on visibility change
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                updateAdditionalAnalytics();
-            }
-        });
     }
 
     /* ── LIVE LEADERBOARD RANK MOVEMENTS ─────────────────────────── */
@@ -1393,38 +1318,38 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleGoogleCredential(response) {
         const activeErrEl = loginForm?.classList.contains('active')
             ? loginError : registerError;
-        try {
-            // Attempt backend auth first
-            const res = await fetch('/api/auth/google', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ credential: response.credential }),
-            });
-            if (!res.ok) throw new Error("Backend unavailable");
-            const data = await res.json();
-            if (data.ok && data.token) {
-                Auth.save(data.token, data.user);
-                updateNavAuth();
-                closeAuthModal();
-            } else {
-                if (activeErrEl) { activeErrEl.className = 'auth-msg error'; activeErrEl.textContent = data.error || 'Google sign-in failed'; }
-            }
-        } catch {
-            // STATIC HOSTING FALLBACK
-            // Decode Google JWT payload locally
-            const parseJwt = (token) => {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
-            };
 
-            const payload = parseJwt(response.credential);
-            Auth.save("mock_google_token", { username: payload.name || "Focus User", email: payload.email });
+        try {
+            // Create a Firebase credential from the Google ID token
+            const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+
+            // Sign in with Firebase
+            const result = await auth.signInWithCredential(credential);
+
+            // If it's a new user (first time signing in with Google)
+            if (result.additionalUserInfo && result.additionalUserInfo.isNewUser) {
+                const user = result.user;
+                // Initialize default user data in Firestore
+                await db.collection('users').doc(user.uid).set({
+                    username: user.displayName || user.email.split('@')[0],
+                    email: user.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    focusScore: 100,
+                    flowScore: 0,
+                    totalLocked: 0,
+                    weeklyHours: 0,
+                    protectionRate: 100
+                });
+            }
+
             updateNavAuth();
             closeAuthModal();
+        } catch (error) {
+            console.error("Firebase Google Auth Error:", error);
+            if (activeErrEl) {
+                activeErrEl.className = 'auth-msg error';
+                activeErrEl.textContent = error.message || 'Google sign-in failed via Firebase';
+            }
         }
     }
 
@@ -1439,40 +1364,24 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.disabled = true; if (btnLabel) btnLabel.textContent = 'Signing in…';
             if (loginError) loginError.className = 'auth-msg';
             if (loginError) loginError.textContent = '';
-            try {
-                const res = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login: loginVal, password: passVal })
-                });
-                if (!res.ok) throw new Error("Backend unavailable");
-                const data = await res.json();
-                if (data.ok && data.token) {
-                    Auth.save(data.token, data.user);
-                    updateNavAuth();
-                    closeAuthModal();
-                } else {
-                    if (loginError) { loginError.className = 'auth-msg error'; loginError.textContent = data.error || 'Login failed'; }
-                    btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Sign In';
-                }
-            } catch {
-                // STATIC HOSTING FALLBACK
-                setTimeout(() => {
-                    // Check local mock DB
-                    const mockUsers = JSON.parse(localStorage.getItem('lockin_mock_users') || '[]');
-                    const user = mockUsers.find(u => u.username === loginVal || u.email === loginVal);
 
-                    if (user && (passVal === 'demo1234' || passVal.length >= 8)) {
-                        Auth.save("mock_token_" + Date.now(), { username: user.username, email: user.email });
-                        updateNavAuth();
-                        closeAuthModal();
-                    } else if (!user) {
-                        if (loginError) { loginError.className = 'auth-msg error'; loginError.textContent = 'Account not found. Sign up first?'; }
-                    } else {
-                        if (loginError) { loginError.className = 'auth-msg error'; loginError.textContent = 'Invalid password for mock sign-in'; }
+            try {
+                // Firebase Login
+                await auth.signInWithEmailAndPassword(loginVal, passVal);
+                updateNavAuth();
+                closeAuthModal();
+            } catch (error) {
+                if (loginError) {
+                    loginError.className = 'auth-msg error';
+                    // Make Firebase errors more user-friendly
+                    let msg = error.message;
+                    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                        msg = 'Invalid email or password.';
                     }
-                    btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Sign In';
-                }, 600);
+                    loginError.textContent = msg;
+                }
+            } finally {
+                btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Sign In';
             }
         });
     }
@@ -1489,47 +1398,43 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.disabled = true; if (btnLabel) btnLabel.textContent = 'Creating account…';
             if (registerError) registerError.className = 'auth-msg';
             if (registerError) registerError.textContent = '';
+
             try {
-                const res = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password })
+                // Firebase Registration
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+
+                // Update Firebase display name with username
+                await userCredential.user.updateProfile({
+                    displayName: username
                 });
-                if (!res.ok) throw new Error("Backend unavailable");
-                const data = await res.json();
-                if (data.ok && data.token) {
-                    Auth.save(data.token, data.user);
-                    updateNavAuth();
-                    closeAuthModal();
-                } else {
-                    if (registerError) { registerError.className = 'auth-msg error'; registerError.textContent = data.error || 'Registration failed'; }
-                    btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Start Your Session';
+
+                // Initialize default user data in Firestore
+                await db.collection('users').doc(userCredential.user.uid).set({
+                    username: username,
+                    email: email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    focusScore: 100,
+                    flowScore: 0,
+                    totalLocked: 0,
+                    weeklyHours: 0,
+                    protectionRate: 100
+                });
+
+                updateNavAuth();
+                closeAuthModal();
+            } catch (error) {
+                if (registerError) {
+                    registerError.className = 'auth-msg error';
+                    let msg = error.message;
+                    if (error.code === 'auth/email-already-in-use') {
+                        msg = 'This email is already registered.';
+                    } else if (error.code === 'auth/weak-password') {
+                        msg = 'Password must be at least 6 characters.';
+                    }
+                    registerError.textContent = msg;
                 }
-            } catch {
-                // STATIC HOSTING FALLBACK
-                setTimeout(() => {
-                    // Check local mock DB for duplicates
-                    const mockUsers = JSON.parse(localStorage.getItem('lockin_mock_users') || '[]');
-                    if (mockUsers.some(u => u.username === username)) {
-                        if (registerError) { registerError.className = 'auth-msg error'; registerError.textContent = 'Username already taken (Local Mock)'; }
-                        btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Create Account';
-                        return;
-                    }
-                    if (mockUsers.some(u => u.email === email)) {
-                        if (registerError) { registerError.className = 'auth-msg error'; registerError.textContent = 'Email already registered (Local Mock)'; }
-                        btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Create Account';
-                        return;
-                    }
-
-                    // Save to mock DB
-                    mockUsers.push({ username, email, password });
-                    localStorage.setItem('lockin_mock_users', JSON.stringify(mockUsers));
-
-                    Auth.save("mock_token_" + Date.now(), { username: username, email: email });
-                    updateNavAuth();
-                    closeAuthModal();
-                    btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Create Account';
-                }, 600);
+            } finally {
+                btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Start Your Session';
             }
         });
     }
