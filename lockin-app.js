@@ -1315,6 +1315,28 @@ document.addEventListener('DOMContentLoaded', () => {
     window._renderGoogleButtons = renderGoogleButtons;
     if (window.google) renderGoogleButtons();
 
+    // Helper function to normalize emails to prevent duplicates via aliases or dots
+    function normalizeEmail(emailStr) {
+        if (!emailStr) return '';
+        let e = emailStr.toLowerCase().trim();
+        const parts = e.split('@');
+        if (parts.length === 2) {
+            let local = parts[0];
+            let domain = parts[1];
+            // Remove + alias
+            const plusIndex = local.indexOf('+');
+            if (plusIndex !== -1) {
+                local = local.substring(0, plusIndex);
+            }
+            // Remove dots for Google domains
+            if (domain === 'gmail.com' || domain === 'googlemail.com') {
+                local = local.replace(/\./g, '');
+            }
+            return `${local}@${domain}`;
+        }
+        return e;
+    }
+
     async function handleGoogleCredential(response) {
         const activeErrEl = loginForm?.classList.contains('active')
             ? loginError : registerError;
@@ -1329,17 +1351,43 @@ document.addEventListener('DOMContentLoaded', () => {
             // If it's a new user (first time signing in with Google)
             if (result.additionalUserInfo && result.additionalUserInfo.isNewUser) {
                 const user = result.user;
-                // Initialize default user data in Firestore
-                await db.collection('users').doc(user.uid).set({
-                    username: user.displayName || user.email.split('@')[0],
-                    email: user.email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    focusScore: 100,
-                    flowScore: 0,
-                    totalLocked: 0,
-                    weeklyHours: 0,
-                    protectionRate: 100
-                });
+
+                try {
+                    const normEmail = normalizeEmail(user.email);
+
+                    const existingUsers = await db.collection('users').where('normalizedEmail', '==', normEmail).get();
+                    if (!existingUsers.empty) {
+                        const existingDoc = existingUsers.docs[0];
+                        if (existingDoc.id !== user.uid) {
+                            throw new Error("This email (or an alias of it) is already registered. Please login to your existing account.");
+                        }
+                    }
+
+                    const exactMatches = await db.collection('users').where('email', '==', user.email).get();
+                    if (!exactMatches.empty) {
+                        const exactDoc = exactMatches.docs[0];
+                        if (exactDoc.id !== user.uid) {
+                            throw new Error("This exact email is already registered. Please login to your existing account.");
+                        }
+                    }
+
+                    // Initialize default user data in Firestore
+                    await db.collection('users').doc(user.uid).set({
+                        username: user.displayName || user.email.split('@')[0],
+                        email: user.email,
+                        normalizedEmail: normEmail,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        focusScore: 100,
+                        flowScore: 0,
+                        totalLocked: 0,
+                        weeklyHours: 0,
+                        protectionRate: 100
+                    });
+
+                } catch (checkError) {
+                    await user.delete();
+                    throw checkError;
+                }
             }
 
             updateNavAuth();
@@ -1403,22 +1451,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Firebase Registration
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
 
-                // Update Firebase display name with username
-                await userCredential.user.updateProfile({
-                    displayName: username
-                });
+                try {
+                    const normEmail = normalizeEmail(email);
 
-                // Initialize default user data in Firestore
-                await db.collection('users').doc(userCredential.user.uid).set({
-                    username: username,
-                    email: email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    focusScore: 100,
-                    flowScore: 0,
-                    totalLocked: 0,
-                    weeklyHours: 0,
-                    protectionRate: 100
-                });
+                    // Check for duplicate normEmail in Firestore
+                    const existingUsers = await db.collection('users').where('normalizedEmail', '==', normEmail).get();
+                    if (!existingUsers.empty) {
+                        const existingDoc = existingUsers.docs[0];
+                        if (existingDoc.id !== userCredential.user.uid) {
+                            throw new Error("This email (or an alias of it) is already registered.");
+                        }
+                    }
+
+                    // Strict check against previous documents without normalizedEmail
+                    const exactMatches = await db.collection('users').where('email', '==', email).get();
+                    if (!exactMatches.empty) {
+                        const exactDoc = exactMatches.docs[0];
+                        if (exactDoc.id !== userCredential.user.uid) {
+                            throw new Error("This exact email is already registered.");
+                        }
+                    }
+
+                    // Update Firebase display name with username
+                    await userCredential.user.updateProfile({
+                        displayName: username
+                    });
+
+                    // Initialize default user data in Firestore
+                    await db.collection('users').doc(userCredential.user.uid).set({
+                        username: username,
+                        email: email,
+                        normalizedEmail: normEmail,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        focusScore: 100,
+                        flowScore: 0,
+                        totalLocked: 0,
+                        weeklyHours: 0,
+                        protectionRate: 100
+                    });
+
+                } catch (checkError) {
+                    await userCredential.user.delete();
+                    throw checkError;
+                }
 
                 updateNavAuth();
                 closeAuthModal();
