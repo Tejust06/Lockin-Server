@@ -1270,7 +1270,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ── Google Sign-In ── */
     function renderGoogleButtons() {
-        const clientId = window._GOOGLE_CLIENT_ID || '381715437191-s6tqn65rsfrs1jpsqo5d674htjpnm985.apps.googleusercontent.com'; // Fallback to provided config
+        const clientId = window._GOOGLE_CLIENT_ID || '112501900352-0h0s42t6uk25pna2h3hujlgk73beenia.apps.googleusercontent.com'; // Fallback to provided config
 
         if (!window.google) {
             // Script totally failed to load
