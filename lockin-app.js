@@ -1371,34 +1371,20 @@ document.addEventListener('DOMContentLoaded', () => {
             auto_select: false,
         });
 
-        // Setup the custom styled buttons to trigger the Google prompt
-        [['google-custom-btn-login', 'login-error'],
-        ['google-custom-btn-register', 'register-error']].forEach(([customId, errorId]) => {
-            const btn = document.getElementById(customId);
-            if (btn) {
-                btn.style.display = 'flex';
-                btn.onclick = () => {
-                    const errEl = document.getElementById(errorId);
-                    if (errEl) {
-                        errEl.className = 'auth-msg';
-                        errEl.textContent = 'Opening Google Sign-In...';
-                    }
-                    google.accounts.id.prompt((notification) => {
-                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                            if (errEl) {
-                                errEl.className = 'auth-msg error';
-                                errEl.textContent = 'Google Sign-In popup was blocked or skipped.';
-                            }
-                        }
-                    });
-                };
-            }
-        });
-
-        // Hide the standard GIS containers since we are using our custom styled buttons
-        ['google-btn-login', 'google-btn-register'].forEach((gisId) => {
+        // Use the official Google rendered buttons to ensure popups are not blocked
+        [['google-btn-login', 'google-custom-btn-login'],
+        ['google-btn-register', 'google-custom-btn-register']].forEach(([gisId, customId]) => {
             const gisContainer = document.getElementById(gisId);
-            if (gisContainer) gisContainer.style.display = 'none';
+            const customBtn = document.getElementById(customId);
+            if (!gisContainer) return;
+            gisContainer.innerHTML = '';
+            google.accounts.id.renderButton(gisContainer, {
+                theme: 'filled_black', shape: 'rectangular',
+                text: 'continue_with', size: 'large', width: 360,
+            });
+            gisContainer.style.display = 'flex';
+            gisContainer.style.justifyContent = 'center';
+            if (customBtn) customBtn.style.display = 'none';
         });
     }
     window._renderGoogleButtons = renderGoogleButtons;
