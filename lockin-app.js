@@ -6,12 +6,13 @@
 /* ─── FIREBASE INITIALIZATION ─────────────────────────────────────────────────────── */
 // User provided only the apiKey, so we construct a best-effort config for the project
 const firebaseConfig = {
-    apiKey: "AIzaSyCorNgPraz29R-m4Hvd1k7E4RBQ2dx2YwM",
-    // These are placeholders assuming standard Firebase URL formats if the specific ones weren't provided.
-    // We will ask the user for the full config if this fails, but for now we try to initialize.
-    authDomain: "lockinproject.firebaseapp.com",
-    projectId: "lockinproject",
-    storageBucket: "lockinproject.appspot.com",
+    apiKey: "AIzaSyBc55ak1_xaN-qWSMF4NHQJdhuLZawMQm8",
+    authDomain: "lockin-5e7f6.firebaseapp.com",
+    projectId: "lockin-5e7f6",
+    storageBucket: "lockin-5e7f6.firebasestorage.app",
+    messagingSenderId: "112501900352",
+    appId: "1:112501900352:web:5025685f41712c1353cba5",
+    measurementId: "G-1YP5N1H2E7"
 };
 
 // Initialize Firebase
@@ -1269,7 +1270,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ── Google Sign-In ── */
     function renderGoogleButtons() {
-        const clientId = _GOOGLE_CLIENT_ID || '381715437191-s6tqn65rsfrs1jpsqo5d674htjpnm985.apps.googleusercontent.com'; // Fallback to provided config
+        const clientId = window._GOOGLE_CLIENT_ID || '381715437191-s6tqn65rsfrs1jpsqo5d674htjpnm985.apps.googleusercontent.com'; // Fallback to provided config
 
         if (!window.google) {
             // Script totally failed to load
