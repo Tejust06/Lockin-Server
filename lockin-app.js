@@ -1344,8 +1344,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ── Google Sign-In ── */
     function renderGoogleButtons() {
-        if (!window.google || !_GOOGLE_CLIENT_ID) {
-            // Static hosting fallback
+        const clientId = _GOOGLE_CLIENT_ID || '381715437191-s6tqn65rsfrs1jpsqo5d674htjpnm985.apps.googleusercontent.com'; // Fallback to provided config
+
+        if (!window.google) {
+            // Script totally failed to load
             [['google-custom-btn-login', 'login-error'],
             ['google-custom-btn-register', 'register-error']].forEach(([customId, errorId]) => {
                 const btn = document.getElementById(customId);
@@ -1354,15 +1356,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     btn.onclick = () => {
                         const errEl = document.getElementById(errorId);
                         if (errEl) {
-                            errEl.className = 'auth-msg';
-                            errEl.textContent = 'Connecting via Google...';
+                            errEl.className = 'auth-msg error';
+                            errEl.textContent = 'Google Login script blocked. Please check your connection or use email/password.';
                         }
-                        // Mock Google Login success
-                        setTimeout(() => {
-                            Auth.save("mock_google_token", { username: "GoogleUser" });
-                            updateNavAuth();
-                            closeAuthModal();
-                        }, 500);
                     };
                 }
             });
@@ -1370,23 +1366,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         google.accounts.id.initialize({
-            client_id: _GOOGLE_CLIENT_ID,
+            client_id: clientId,
             callback: handleGoogleCredential,
             auto_select: false,
         });
 
-        [['google-btn-login', 'google-custom-btn-login'],
-        ['google-btn-register', 'google-custom-btn-register']].forEach(([gisId, customId]) => {
+        // Setup the custom styled buttons to trigger the Google prompt
+        [['google-custom-btn-login', 'login-error'],
+        ['google-custom-btn-register', 'register-error']].forEach(([customId, errorId]) => {
+            const btn = document.getElementById(customId);
+            if (btn) {
+                btn.style.display = 'flex';
+                btn.onclick = () => {
+                    const errEl = document.getElementById(errorId);
+                    if (errEl) {
+                        errEl.className = 'auth-msg';
+                        errEl.textContent = 'Opening Google Sign-In...';
+                    }
+                    google.accounts.id.prompt((notification) => {
+                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                            if (errEl) {
+                                errEl.className = 'auth-msg error';
+                                errEl.textContent = 'Google Sign-In popup was blocked or skipped.';
+                            }
+                        }
+                    });
+                };
+            }
+        });
+
+        // Hide the standard GIS containers since we are using our custom styled buttons
+        ['google-btn-login', 'google-btn-register'].forEach((gisId) => {
             const gisContainer = document.getElementById(gisId);
-            const customBtn = document.getElementById(customId);
-            if (!gisContainer) return;
-            gisContainer.innerHTML = '';
-            google.accounts.id.renderButton(gisContainer, {
-                theme: 'filled_black', shape: 'rectangular',
-                text: 'continue_with', size: 'large', width: 360,
-            });
-            gisContainer.style.display = '';
-            if (customBtn) customBtn.style.display = 'none';
+            if (gisContainer) gisContainer.style.display = 'none';
         });
     }
     window._renderGoogleButtons = renderGoogleButtons;
