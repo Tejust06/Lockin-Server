@@ -1277,6 +1277,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const code = error?.code || '';
         if (code === 'auth/popup-blocked') return 'Popup blocked. Please allow popups or try again.';
         if (code === 'auth/popup-closed-by-user') return 'Google sign-in was cancelled.';
+        if (code === 'auth/popup-timeout') return 'Google popup timed out. Redirecting to complete sign-in...';
         if (code === 'auth/unauthorized-domain') return 'This domain is not authorized for Google sign-in.';
         if (code === 'auth/operation-not-allowed') return 'Google sign-in is disabled in Firebase Authentication.';
         if (code === 'auth/network-request-failed') return 'Network error. Check your internet connection and retry.';
@@ -1288,6 +1289,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!errEl) return;
         errEl.className = 'auth-msg error';
         errEl.textContent = getGoogleAuthErrorMessage(error);
+    }
+
+    let googleAuthInFlight = false;
+    const GOOGLE_POPUP_TIMEOUT_MS = 12000;
+
+    function setGoogleButtonsBusy(isBusy) {
+        ['google-custom-btn-login', 'google-custom-btn-register'].forEach((id) => {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            btn.disabled = isBusy;
+            btn.style.opacity = isBusy ? '0.75' : '';
+            btn.style.pointerEvents = isBusy ? 'none' : '';
+            btn.style.cursor = isBusy ? 'wait' : '';
+        });
     }
 
     async function syncGoogleUserProfile(result) {
@@ -1326,24 +1341,38 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn('Google profile sync failed:', profileError);
         }
 
+        googleAuthInFlight = false;
+        setGoogleButtonsBusy(false);
         updateNavAuth();
         closeAuthModal();
     }
 
     async function startGoogleSignIn(explicitErrorEl = null) {
+        if (googleAuthInFlight) return;
+        googleAuthInFlight = true;
+        setGoogleButtonsBusy(true);
+
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
+        let triggeredRedirect = false;
 
         try {
-            const result = await auth.signInWithPopup(provider);
+            const popupResult = auth.signInWithPopup(provider);
+            const popupTimeout = new Promise((_, reject) => {
+                setTimeout(() => reject({ code: 'auth/popup-timeout' }), GOOGLE_POPUP_TIMEOUT_MS);
+            });
+
+            const result = await Promise.race([popupResult, popupTimeout]);
             await finalizeGoogleSignIn(result);
             return;
         } catch (error) {
             const useRedirectFallback =
                 error?.code === 'auth/popup-blocked' ||
-                error?.code === 'auth/operation-not-supported-in-this-environment';
+                error?.code === 'auth/operation-not-supported-in-this-environment' ||
+                error?.code === 'auth/popup-timeout';
             if (useRedirectFallback) {
                 try {
+                    triggeredRedirect = true;
                     await auth.signInWithRedirect(provider);
                     return;
                 } catch (redirectError) {
@@ -1355,6 +1384,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             console.error('Firebase Google Popup Error:', error);
             showGoogleAuthError(error, explicitErrorEl);
+        } finally {
+            if (!triggeredRedirect) {
+                googleAuthInFlight = false;
+                setGoogleButtonsBusy(false);
+            }
         }
     }
 
@@ -1388,6 +1422,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window._renderGoogleButtons = renderGoogleButtons;
     renderGoogleButtons();
+
+    auth.onAuthStateChanged((user) => {
+        updateNavAuth();
+        if (user && authModal?.classList.contains('active')) {
+            closeAuthModal();
+        }
+        if (user) {
+            googleAuthInFlight = false;
+            setGoogleButtonsBusy(false);
+        }
+    });
 
     // Helper function to normalize emails to prevent duplicates via aliases or dots
     function normalizeEmail(emailStr) {
