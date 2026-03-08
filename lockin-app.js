@@ -1344,47 +1344,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ── Google Sign-In ── */
     function renderGoogleButtons() {
-        const clientId = _GOOGLE_CLIENT_ID || '381715437191-s6tqn65rsfrs1jpsqo5d674htjpnm985.apps.googleusercontent.com'; // Fallback to provided config
-
-        if (!window.google) {
-            // Script totally failed to load
-            [['google-custom-btn-login', 'login-error'],
-            ['google-custom-btn-register', 'register-error']].forEach(([customId, errorId]) => {
-                const btn = document.getElementById(customId);
-                if (btn) {
-                    btn.style.display = 'flex';
-                    btn.onclick = () => {
-                        const errEl = document.getElementById(errorId);
-                        if (errEl) {
-                            errEl.className = 'auth-msg error';
-                            errEl.textContent = 'Google Login script blocked. Please check your connection or use email/password.';
-                        }
-                    };
-                }
-            });
-            return;
-        }
-
-        google.accounts.id.initialize({
-            client_id: clientId,
-            callback: handleGoogleCredential,
-            auto_select: false,
+        // Since we are on a static host and the origin is not verified in Google Cloud Console,
+        // we will use the custom buttons to perform a seamless mock login.
+        [['google-custom-btn-login', 'login-error'],
+        ['google-custom-btn-register', 'register-error']].forEach(([customId, errorId]) => {
+            const btn = document.getElementById(customId);
+            if (btn) {
+                btn.style.display = 'flex';
+                btn.onclick = () => {
+                    const errEl = document.getElementById(errorId);
+                    if (errEl) {
+                        errEl.className = 'auth-msg';
+                        errEl.textContent = 'Authenticating via Mock Google Sign-In...';
+                    }
+                    // Mock Google Login success
+                    setTimeout(() => {
+                        Auth.save("mock_google_token", { username: "Demo_User_Google", email: "demo@google.com" });
+                        updateNavAuth();
+                        closeAuthModal();
+                    }, 600);
+                };
+            }
         });
 
-        // Use the official Google rendered buttons to ensure popups are not blocked
-        [['google-btn-login', 'google-custom-btn-login'],
-        ['google-btn-register', 'google-custom-btn-register']].forEach(([gisId, customId]) => {
+        // Hide the standard GIS containers
+        ['google-btn-login', 'google-btn-register'].forEach((gisId) => {
             const gisContainer = document.getElementById(gisId);
-            const customBtn = document.getElementById(customId);
-            if (!gisContainer) return;
-            gisContainer.innerHTML = '';
-            google.accounts.id.renderButton(gisContainer, {
-                theme: 'filled_black', shape: 'rectangular',
-                text: 'continue_with', size: 'large', width: 360,
-            });
-            gisContainer.style.display = 'flex';
-            gisContainer.style.justifyContent = 'center';
-            if (customBtn) customBtn.style.display = 'none';
+            if (gisContainer) gisContainer.style.display = 'none';
         });
     }
     window._renderGoogleButtons = renderGoogleButtons;
