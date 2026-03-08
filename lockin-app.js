@@ -1458,9 +1458,19 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch {
                 // STATIC HOSTING FALLBACK
                 setTimeout(() => {
-                    Auth.save("mock_token", { username: loginVal });
-                    updateNavAuth();
-                    closeAuthModal();
+                    // Check local mock DB
+                    const mockUsers = JSON.parse(localStorage.getItem('lockin_mock_users') || '[]');
+                    const user = mockUsers.find(u => u.username === loginVal || u.email === loginVal);
+
+                    if (user && (passVal === 'demo1234' || passVal.length >= 8)) {
+                        Auth.save("mock_token_" + Date.now(), { username: user.username, email: user.email });
+                        updateNavAuth();
+                        closeAuthModal();
+                    } else if (!user) {
+                        if (loginError) { loginError.className = 'auth-msg error'; loginError.textContent = 'Account not found. Sign up first?'; }
+                    } else {
+                        if (loginError) { loginError.className = 'auth-msg error'; loginError.textContent = 'Invalid password for mock sign-in'; }
+                    }
                     btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Sign In';
                 }, 600);
             }
@@ -1498,10 +1508,27 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch {
                 // STATIC HOSTING FALLBACK
                 setTimeout(() => {
-                    Auth.save("mock_token", { username: username, email: email });
+                    // Check local mock DB for duplicates
+                    const mockUsers = JSON.parse(localStorage.getItem('lockin_mock_users') || '[]');
+                    if (mockUsers.some(u => u.username === username)) {
+                        if (registerError) { registerError.className = 'auth-msg error'; registerError.textContent = 'Username already taken (Local Mock)'; }
+                        btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Create Account';
+                        return;
+                    }
+                    if (mockUsers.some(u => u.email === email)) {
+                        if (registerError) { registerError.className = 'auth-msg error'; registerError.textContent = 'Email already registered (Local Mock)'; }
+                        btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Create Account';
+                        return;
+                    }
+
+                    // Save to mock DB
+                    mockUsers.push({ username, email, password });
+                    localStorage.setItem('lockin_mock_users', JSON.stringify(mockUsers));
+
+                    Auth.save("mock_token_" + Date.now(), { username: username, email: email });
                     updateNavAuth();
                     closeAuthModal();
-                    btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Start Your Session';
+                    btn.disabled = false; if (btnLabel) btnLabel.textContent = 'Create Account';
                 }, 600);
             }
         });
