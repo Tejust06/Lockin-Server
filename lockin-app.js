@@ -206,62 +206,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /* ── WAITLIST FORM CONVERSION ──────────────────────────────────── */
+    /* ── WAITLIST FORM (Netlify Native) ────────────────────────────── */
     const waitlistForm = document.getElementById('waitlist-form');
     const waitlistEmail = document.getElementById('waitlist-email');
     const waitlistBtn = waitlistForm ? waitlistForm.querySelector('button') : null;
     const waitlistMsg = document.getElementById('waitlist-message');
 
     if (waitlistForm && waitlistBtn && waitlistEmail && waitlistMsg) {
-        waitlistForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = waitlistEmail.value.trim();
-            if (!email) return;
-
-            // Loading State Execution
+        const submitted = new URLSearchParams(window.location.search).get('submitted') === 'true';
+        if (submitted) {
+            waitlistBtn.textContent = 'Beta Secured';
             waitlistBtn.disabled = true;
-            waitlistBtn.innerHTML = '<span class="spinner"></span>';
-            waitlistMsg.textContent = 'Securing priority access...';
-            waitlistMsg.className = 'form-message';
-            waitlistEmail.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-            waitlistEmail.style.boxShadow = 'none';
-
-            // Submit to Netlify Forms
-            fetch('/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    'form-name': 'waitlist-form',
-                    'email': email
-                }).toString()
-            })
-                .then(res => {
-                    if (!res.ok) throw new Error('Network response was not ok');
-                    waitlistBtn.innerHTML = 'Beta Secured';
-                    waitlistMsg.textContent = "✓ You're on the list! We'll notify you when LockIn launches.";
-                    waitlistMsg.className = 'form-message success';
-                    waitlistEmail.value = '';
-
-                    // Add positive reinforcement glow
-                    waitlistEmail.style.borderColor = 'var(--color-success)';
-                    waitlistEmail.style.boxShadow = '0 0 0 4px rgba(34, 197, 94, 0.1)';
-
-                    // Reset button after 3s
-                    setTimeout(() => {
-                        waitlistBtn.disabled = false;
-                        waitlistBtn.innerHTML = 'Join Beta';
-                        waitlistEmail.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                        waitlistEmail.style.boxShadow = 'none';
-                    }, 3000);
-                })
-                .catch(err => {
-                    console.error(err);
-                    waitlistBtn.disabled = false;
-                    waitlistBtn.innerHTML = 'Join Beta';
-                    waitlistMsg.textContent = '❌ Submission failed. Please try again.';
-                    waitlistMsg.className = 'form-message error';
-                });
-        });
+            waitlistMsg.textContent = "✓ You're on the list! We'll notify you when LockIn launches.";
+            waitlistMsg.className = 'form-message success';
+            waitlistEmail.value = '';
+            waitlistEmail.style.borderColor = 'var(--color-success)';
+            waitlistEmail.style.boxShadow = '0 0 0 4px rgba(34, 197, 94, 0.1)';
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+        }
     }
 
     /* ── HIGH PERFORMANCE SCROLL REVEALS ───────────────────────────── */

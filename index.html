@@ -20,7 +20,7 @@
         content="LockIn is a focus system where users commit money to a work session. Break focus and lose the stake.">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#070709">
-    <link rel="canonical" href="https://lockin.app">
+    <link rel="canonical" href="https://lockinproject.netlify.app">
 
     <!-- Core Performance Check (Executes instantly before DOM render) -->
     <script>
@@ -41,14 +41,14 @@
     <meta property="og:title" content="LockIn — Focus with consequences.">
     <meta property="og:description" content="Commit to a focus session. Break focus and lose the stake.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://lockin.app">
-    <meta property="og:image" content="https://lockin.app/og-image.png">
+    <meta property="og:url" content="https://lockinproject.netlify.app">
+    <meta property="og:image" content="https://lockinproject.netlify.app/og-image.png">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="LockIn — Focus with consequences.">
     <meta name="twitter:description" content="Commit to a focus session. Break focus and lose the stake.">
-    <meta name="twitter:image" content="https://lockin.app/og-image.png">
+    <meta name="twitter:image" content="https://lockinproject.netlify.app/og-image.png">
 
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
@@ -59,7 +59,7 @@
       "applicationCategory": "ProductivityApplication",
       "operatingSystem": "Web",
       "description": "Focus sessions with real consequences. Commit money to a work session — break focus and lose the stake.",
-      "url": "https://lockin.app",
+      "url": "https://lockinproject.netlify.app",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -6609,8 +6609,12 @@
                     </svg>
                 </div>
 
-                <form id="waitlist-form" class="vortex-input-bar" data-netlify="true" name="waitlist-form">
+                <form id="waitlist-form" class="vortex-input-bar" name="waitlist-form" method="POST"
+                    data-netlify="true" data-netlify-honeypot="bot-field" action="/?submitted=true#waitlist-form">
                     <input type="hidden" name="form-name" value="waitlist-form" />
+                    <p hidden>
+                        <label>Don't fill this out if you're human: <input name="bot-field" /></label>
+                    </p>
                     <label for="waitlist-email" class="sr-only">Email address</label>
                     <input id="waitlist-email" name="email" type="email" placeholder="Enter your email"
                         autocomplete="email" required aria-label="Email address" />
